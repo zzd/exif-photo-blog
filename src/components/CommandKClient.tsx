@@ -40,6 +40,7 @@ export default function CommandKClient({
   const {
     isCommandKOpen: isOpen,
     setIsCommandKOpen: setIsOpen,
+    setShouldRespondToKeyboardCommands,
   } = useAppState();
 
   const isOpenRef = useRef(isOpen);
@@ -103,12 +104,15 @@ export default function CommandKClient({
   }, [queryLive]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setShouldRespondToKeyboardCommands?.(false);
+    } else if (!isOpen) {
       setQueryLive('');
       setQueriedSections([]);
       setIsLoading(false);
+      setTimeout(() => setShouldRespondToKeyboardCommands?.(true), 500);
     }
-  }, [isOpen]);
+  }, [isOpen, setShouldRespondToKeyboardCommands]);
 
   const sectionTheme: CommandKSection = {
     heading: 'Theme',
@@ -209,8 +213,8 @@ export default function CommandKClient({
                     action,
                   }) =>
                     <Command.Item
-                      key={`${heading}-${label}`}
-                      value={`${heading}-${label}`}
+                      key={`${heading} ${label}`}
+                      value={`${heading} ${label}`}
                       className={clsx(
                         'px-2',
                         accessory ? 'py-2' : 'py-1',
