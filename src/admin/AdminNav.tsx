@@ -31,7 +31,7 @@ export default function AdminNav({
         )}>
           <div className={clsx(
             'flex gap-2 md:gap-4',
-            'flex-grow overflow-x-scroll',
+            'flex-grow overflow-x-auto',
           )}>
             {items.map(({ label, href, count }) =>
               <Link
