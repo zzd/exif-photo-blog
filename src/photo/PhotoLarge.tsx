@@ -18,6 +18,7 @@ import PhotoFilmSimulation from '@/simulation/PhotoFilmSimulation';
 import { sortTags } from '@/tag';
 import AdminPhotoMenu from '@/admin/AdminPhotoMenu';
 import { Suspense } from 'react';
+import DivDebugBaselineGrid from '@/components/DivDebugBaselineGrid';
 
 export default function PhotoLarge({
   photo,
@@ -63,12 +64,11 @@ export default function PhotoLarge({
           priority={priority}
         />}
       contentSide={
-        <div className={clsx(
+        <DivDebugBaselineGrid className={clsx(
           'relative',
-          'leading-snug',
           'sticky top-4 self-start -translate-y-1',
           'grid grid-cols-2 md:grid-cols-1',
-          'gap-x-0.5 sm:gap-x-1 gap-y-4',
+          'gap-x-0.5 sm:gap-x-1 gap-y-baseline',
           'pb-6',
         )}>
           {/* Meta */}
@@ -88,7 +88,7 @@ export default function PhotoLarge({
                 </div>
               </Suspense>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-baseline">
               {photo.caption &&
                 <div className="uppercase">
                   {photo.caption}
@@ -106,7 +106,7 @@ export default function PhotoLarge({
             </div>
           </div>
           {/* EXIF Data */}
-          <div className="space-y-4">
+          <div className="space-y-baseline">
             {showExifContent &&
               <>
                 <ul className="text-medium">
@@ -134,8 +134,8 @@ export default function PhotoLarge({
                   />}
               </>}
             <div className={clsx(
-              'flex gap-2',
-              'md:flex-col md:gap-4 md:justify-normal',
+              'flex gap-x-1.5 gap-y-baseline',
+              'md:flex-col md:justify-normal',
             )}>
               <div className={clsx(
                 'text-medium uppercase pr-1',
@@ -154,7 +154,7 @@ export default function PhotoLarge({
               />
             </div>
           </div>
-        </div>}
+        </DivDebugBaselineGrid>}
     />
   );
 };
