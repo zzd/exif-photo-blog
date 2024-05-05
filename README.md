@@ -29,19 +29,19 @@ Installation
 1. Click [Deploy](https://vercel.com/new/clone?demo-title=Photo+Blog&demo-description=Store+photos+with+original+camera+data&demo-url=https%3A%2F%2Fphotos.sambecker.com&demo-image=https%3A%2F%2Fphotos.sambecker.com%2Ftemplate-image-tight&project-name=Photo+Blog&repository-name=exif-photo-blog&repository-url=https%3A%2F%2Fgithub.com%2Fsambecker%2Fexif-photo-blog&from=templates&skippable-integrations=1&teamCreateStatus=hidden&stores=%5B%7B%22type%22%3A%22postgres%22%7D%2C%7B%22type%22%3A%22blob%22%7D%5D)
 2. Add required storage ([Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres/quickstart#create-a-postgres-database) + [Vercel Blob](https://vercel.com/docs/storage/vercel-blob/quickstart#create-a-blob-store)) as part of template installation
 3. Configure environment variables from project settings:
-- `NEXT_PUBLIC_SITE_TITLE` (e.g., My Photos)
-- `NEXT_PUBLIC_SITE_DOMAIN` (e.g., photos.domain.com)
-- `NEXT_PUBLIC_SITE_DESCRIPTION` (optional—mainly used for OG meta)
+   - `NEXT_PUBLIC_SITE_TITLE` (e.g., My Photos)
+   - `NEXT_PUBLIC_SITE_DOMAIN` (e.g., photos.domain.com)
+   - `NEXT_PUBLIC_SITE_DESCRIPTION` (optional—mainly used for OG meta)
 
 ### 2. Setup Auth
 
 1. [Generate auth secret](https://generate-secret.vercel.app/32) and add to environment variables:
-- `AUTH_SECRET`
+   - `AUTH_SECRET`
 2. Add admin user to environment variables:
-- `ADMIN_EMAIL`
-- `ADMIN_PASSWORD`
+   - `ADMIN_EMAIL`
+   - `ADMIN_PASSWORD`
 3. Trigger redeploy
-- Visit project on Vercel, navigate to "Deployments" tab, click ••• button next to most recent deployment, and select "Redeploy"
+   - Visit project on Vercel, navigate to "Deployments" tab, click ••• button next to most recent deployment, and select "Redeploy"
 
 ### 3. Upload your first photo 🎉
 1. Visit `/admin`
@@ -191,6 +191,14 @@ Only one storage adapter—Vercel Blob, Cloudflare R2, or AWS S3—can be used a
    - [Create IAM user](https://console.aws.amazon.com/iam/home#/users) by choosing "Attach policies directly," and selecting the policy created above. Create "Access key" under "Security credentials," choose "Application running outside AWS," and store credentials (⚠️ _Ensure access keys are not prefixed with `NEXT_PUBLIC`_):
      - `AWS_S3_ACCESS_KEY`
      - `AWS_S3_SECRET_ACCESS_KEY`
+
+## Alternate database providers (experimental)
+
+Vercel Postgres can be switched to another Postgres-compatible, pooling provider by updating `POSTGRES_URL`. Some providers only work when SSL is disabled, which can configured by setting `DISABLE_POSTGRES_SSL = 1`.
+
+### Supabase
+1. Ensure connection string is set to "Transaction Mode" via port `6543`
+2. Disable SSL by setting `DISABLE_POSTGRES_SSL = 1`
 
 FAQ
 -
