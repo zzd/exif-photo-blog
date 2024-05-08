@@ -11,6 +11,7 @@ import {
   formatFocalLength,
 } from '@/utility/exif';
 import camelcaseKeys from 'camelcase-keys';
+import { isBefore } from 'date-fns';
 import type { Metadata } from 'next';
 
 // ROOT PAGE
@@ -234,11 +235,11 @@ export const dateRangeForPhotos = (
     const photosSorted = sortPhotosByDate(photos);
     start = formatDateFromPostgresString(
       explicitDateRange?.start ?? photosSorted[photos.length - 1].takenAtNaive,
-      true,
+      'short',
     );
     end = formatDateFromPostgresString(
       explicitDateRange?.end ?? photosSorted[0].takenAtNaive,
-      true
+      'short',
     );
     description = start === end
       ? start
@@ -276,3 +277,6 @@ export const isNextImageReadyBasedOnPhotos = async (photos: Photo[]) =>
   photos.length > 0 && fetch(getNextImageUrlForRequest(photos[0].url, 640))
     .then(response => response.ok)
     .catch(() => false);
+
+export const doesPhotoNeedBlurCompatibility = (photo: Photo) =>
+  isBefore(photo.updatedAt, new Date('2024-05-07'));
