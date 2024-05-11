@@ -23,6 +23,12 @@ const VERCEL_PROJECT_URL = VERCEL_BRANCH_URL && VERCEL_BRANCH
   ? `${VERCEL_BRANCH_URL.split(`-git-${VERCEL_BRANCH}-`)[0]}.vercel.app`
   : undefined;
 
+export const IS_PRODUCTION = process.env.NODE_ENV === 'production' && (
+  // Make environment checks resilient to non-Vercel deployments
+  VERCEL_ENV === 'production' ||
+  !VERCEL_ENV
+);
+
 // User-facing domain, potential site title
 const SITE_DOMAIN =
   process.env.NEXT_PUBLIC_SITE_DOMAIN ||
@@ -108,6 +114,8 @@ export const STATICALLY_OPTIMIZED_PAGES =
   process.env.NEXT_PUBLIC_STATICALLY_OPTIMIZE_PAGES === '1';
 export const STATICALLY_OPTIMIZED_OG_IMAGES =
   process.env.NEXT_PUBLIC_STATICALLY_OPTIMIZE_OG_IMAGES === '1';
+export const MATTE_PHOTOS =
+  process.env.NEXT_PUBLIC_MATTE_PHOTOS === '1';
 export const BLUR_ENABLED =
   process.env.NEXT_PUBLIC_BLUR_DISABLED !== '1';
 export const GEO_PRIVACY_ENABLED =
@@ -171,6 +179,7 @@ export const CONFIG_CHECKLIST_STATUS = {
   ),
   arePagesStaticallyOptimized: STATICALLY_OPTIMIZED_PAGES,
   areOGImagesStaticallyOptimized: STATICALLY_OPTIMIZED_OG_IMAGES,
+  arePhotosMatted: MATTE_PHOTOS,
   isBlurEnabled: BLUR_ENABLED,
   isGeoPrivacyEnabled: GEO_PRIVACY_ENABLED,
   isAiTextGenerationEnabled: AI_TEXT_GENERATION_ENABLED,
