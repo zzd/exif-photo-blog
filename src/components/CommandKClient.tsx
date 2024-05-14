@@ -17,6 +17,7 @@ import {
   PATH_ADMIN_UPLOADS,
   PATH_SIGN_IN,
   pathForPhoto,
+  pathForTag,
 } from '../site/paths';
 import Modal from './Modal';
 import { clsx } from 'clsx/lite';
@@ -35,8 +36,11 @@ import { signOutAndRedirectAction } from '@/auth/actions';
 import { TbPhoto } from 'react-icons/tb';
 import { getKeywordsForPhoto, titleForPhoto } from '@/photo';
 import PhotoDate from '@/photo/PhotoDate';
-import PhotoTiny from '@/photo/PhotoTiny';
+import PhotoSmall from '@/photo/PhotoSmall';
 import { FaCheck } from 'react-icons/fa6';
+import { TagsWithMeta, addHiddenToTags } from '@/tag';
+import { FaTag } from 'react-icons/fa';
+import { formatCount, formatCountDescriptive } from '@/utility/string';
 
 const LISTENER_KEYDOWN = 'keydown';
 const MINIMUM_QUERY_LENGTH = 2;
@@ -44,9 +48,9 @@ const MINIMUM_QUERY_LENGTH = 2;
 type CommandKItem = {
   label: string
   keywords?: string[]
+  accessory?: ReactNode
   annotation?: ReactNode
   annotationAria?: string
-  accessory?: ReactNode
   path?: string
   action?: () => void | Promise<void>
 }
@@ -58,10 +62,12 @@ export type CommandKSection = {
 }
 
 export default function CommandKClient({
+  tags,
   serverSections = [],
   showDebugTools,
   footer,
 }: {
+  tags: TagsWithMeta
   serverSections?: CommandKSection[]
   showDebugTools?: boolean
   footer?: string
@@ -70,14 +76,15 @@ export default function CommandKClient({
     isUserSignedIn,
     setUserEmail,
     isCommandKOpen: isOpen,
+    hiddenPhotosCount,
     arePhotosMatted,
     shouldShowBaselineGrid,
-    shouldDebugBlur,
+    shouldDebugImageFallbacks,
     setIsCommandKOpen: setIsOpen,
     setShouldRespondToKeyboardCommands,
     setShouldShowBaselineGrid,
     setArePhotosMatted,
-    setShouldDebugBlur,
+    setShouldDebugImageFallbacks,
   } = useAppState();
 
   const isOpenRef = useRef(isOpen);
@@ -139,7 +146,7 @@ export default function CommandKClient({
                 label: titleForPhoto(photo),
                 keywords: getKeywordsForPhoto(photo),
                 annotation: <PhotoDate {...{ photo }} />,
-                accessory: <PhotoTiny photo={photo} />,
+                accessory: <PhotoSmall photo={photo} />,
                 path: pathForPhoto(photo),
               })),
             }]
@@ -173,6 +180,24 @@ export default function CommandKClient({
     }
   }, [isOpen, setShouldRespondToKeyboardCommands]);
 
+  const tagsIncludingHidden = useMemo(() =>
+    addHiddenToTags(tags, hiddenPhotosCount)
+  , [tags, hiddenPhotosCount]);
+
+  const SECTION_TAGS: CommandKSection = {
+    heading: 'Tags',
+    accessory: <FaTag
+      size={10}
+      className="translate-x-[1px] translate-y-[0.75px]"
+    />,
+    items: tagsIncludingHidden.map(({ tag, count }) => ({
+      label: tag,
+      annotation: formatCount(count),
+      annotationAria: formatCountDescriptive(count),
+      path: pathForTag(tag),
+    })),
+  };
+
   const clientSections: CommandKSection[] = [{
     heading: 'Theme',
     accessory: <IoInvertModeSharp
@@ -203,9 +228,11 @@ export default function CommandKClient({
         action: () => setArePhotosMatted?.(prev => !prev),
         annotation: arePhotosMatted ? <FaCheck size={12} /> : undefined,
       }, {
-        label: 'Toggle Blur Debug',
-        action: () => setShouldDebugBlur?.(prev => !prev),
-        annotation: shouldDebugBlur ? <FaCheck size={12} /> : undefined,
+        label: 'Toggle Image Fallbacks',
+        action: () => setShouldDebugImageFallbacks?.(prev => !prev),
+        annotation: shouldDebugImageFallbacks
+          ? <FaCheck size={12} />
+          : undefined,
       }, {
         label: 'Toggle Baseline Grid',
         action: () => setShouldShowBaselineGrid?.(prev => !prev),
@@ -316,6 +343,7 @@ export default function CommandKClient({
               {isLoading ? 'Searching ...' : 'No results found'}
             </Command.Empty>
             {queriedSections
+              .concat(SECTION_TAGS)
               .concat(serverSections)
               .concat(sectionPages)
               .concat(adminSection)

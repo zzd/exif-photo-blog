@@ -3,7 +3,7 @@
 import { Photo, deleteConfirmationTextForPhoto, titleForPhoto } from '@/photo';
 import AdminTable from './AdminTable';
 import { Fragment } from 'react';
-import PhotoTiny from '@/photo/PhotoTiny';
+import PhotoSmall from '@/photo/PhotoSmall';
 import { clsx } from 'clsx/lite';
 import { pathForAdminPhotoEdit, pathForPhoto } from '@/site/paths';
 import Link from 'next/link';
@@ -36,7 +36,7 @@ export default function AdminPhotosTable({
     <AdminTable>
       {photos.map((photo, index) =>
         <Fragment key={photo.id}>
-          <PhotoTiny
+          <PhotoSmall
             photo={photo}
             onVisible={index === photos.length - 1
               ? onLastPhotoVisible
@@ -50,15 +50,16 @@ export default function AdminPhotosTable({
               prefetch={false}
             >
               <span className={clsx(
-                'inline-flex items-center gap-2',
                 photo.hidden && 'text-dim',
               )}>
-                <span>{titleForPhoto(photo)}</span>
-                {photo.hidden &&
+                {titleForPhoto(photo)}
+                {photo.hidden && <span className="whitespace-nowrap">
+                  {' '}
                   <AiOutlineEyeInvisible
-                    className="translate-y-[0.25px]"
+                    className="inline translate-y-[-0.5px]"
                     size={16}
-                  />}
+                  />
+                </span>}
               </span>
               {photo.priorityOrder !== null &&
                 <span className={clsx(
