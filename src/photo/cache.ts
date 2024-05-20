@@ -35,7 +35,6 @@ import {
   PREFIX_TAG,
   pathForPhoto,
 } from '@/site/paths';
-import { cache } from 'react';
 
 // Table key
 const KEY_PHOTOS            = 'photos';
@@ -137,18 +136,28 @@ export const getPhotosCached = (
   getPhotos,
   [KEY_PHOTOS, ...getPhotosCacheKeys(...args)],
 )(...args).then(parseCachedPhotosDates);
-export const getPhotosCachedCached = cache(getPhotosCached);
 
-const getPhotosNearIdCached = (
+export const getPhotosNearIdCached = (
   ...args: Parameters<typeof getPhotosNearId>
 ) => unstable_cache(
   getPhotosNearId,
-  [KEY_PHOTOS],
-)(...args).then(({ photos, photo }) => ({
-  photos: parseCachedPhotosDates(photos),
-  photo: photo ? parseCachedPhotoDates(photo) : undefined,
-}));
-export const getPhotosNearIdCachedCached = cache(getPhotosNearIdCached);
+  [KEY_PHOTOS, ...getPhotosCacheKeys(args[1])],
+)(...args).then(({ photos, indexNumber }) => {
+  const [photoId, { limit }] = args;
+  const photo = photos.find(({ id }) => id === photoId);
+  const isPhotoFirst = photos.findIndex(p => p.id === photoId) === 0;
+  return {
+    photo: photo ? parseCachedPhotoDates(photo) : undefined,
+    photos: parseCachedPhotosDates(photos),
+    ...limit && {
+      photosGrid: photos.slice(
+        isPhotoFirst ? 1 : 2,
+        isPhotoFirst ? limit - 1 : limit,
+      ),
+    },
+    indexNumber,
+  };
+});
 
 export const getPhotosDateRangeCached =
   unstable_cache(
