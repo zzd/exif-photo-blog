@@ -19,6 +19,7 @@ import {
 } from '@/site/paths';
 import PhotoTags from '@/tag/PhotoTags';
 import ShareButton from '@/components/ShareButton';
+import DownloadButton from '@/components/DownloadButton';
 import PhotoCamera from '../camera/PhotoCamera';
 import { cameraFromPhoto } from '@/camera';
 import PhotoFilmSimulation from '@/simulation/PhotoFilmSimulation';
@@ -27,7 +28,7 @@ import DivDebugBaselineGrid from '@/components/DivDebugBaselineGrid';
 import PhotoLink from './PhotoLink';
 import {
   SHOULD_PREFETCH_ALL_LINKS,
-  SHOW_PHOTO_TITLE_FALLBACK_TEXT,
+  ALLOW_PUBLIC_DOWNLOADS,
 } from '@/site/config';
 import AdminPhotoMenuClient from '@/admin/AdminPhotoMenuClient';
 import { RevalidatePhoto } from './InfinitePhotoScroll';
@@ -38,11 +39,14 @@ import { useAppState } from '@/state/AppState';
 
 export default function PhotoLarge({
   photo,
+  className,
   primaryTag,
   priority,
   prefetch = SHOULD_PREFETCH_ALL_LINKS,
   prefetchRelatedLinks = SHOULD_PREFETCH_ALL_LINKS,
   revalidatePhoto,
+  showTitle = true,
+  showTitleAsH1,
   showCamera = true,
   showSimulation = true,
   shouldShare = true,
@@ -55,11 +59,14 @@ export default function PhotoLarge({
   onVisible,
 }: {
   photo: Photo
+  className?: string
   primaryTag?: string
   priority?: boolean
   prefetch?: boolean
   prefetchRelatedLinks?: boolean
   revalidatePhoto?: RevalidatePhoto
+  showTitle?: boolean
+  showTitleAsH1?: boolean
   showCamera?: boolean
   showSimulation?: boolean
   shouldShare?: boolean
@@ -85,10 +92,13 @@ export default function PhotoLarge({
 
   const { arePhotosMatted, isUserSignedIn } = useAppState();
 
+  const hasTitle =
+    showTitle &&
+    Boolean(photo.title);
+
   const hasTitleContent =
-    photo.title ||
-    SHOW_PHOTO_TITLE_FALLBACK_TEXT ||
-    photo.caption;
+    hasTitle ||
+    Boolean(photo.caption);
 
   const hasMetaContent =
     showCameraContent ||
@@ -99,9 +109,17 @@ export default function PhotoLarge({
     hasTitleContent ||
     hasMetaContent;
 
+  const renderPhotoLink = () =>
+    <PhotoLink
+      photo={photo}
+      className="font-bold uppercase flex-grow"
+      prefetch={prefetch}
+    />;
+
   return (
     <SiteGrid
       containerRef={ref}
+      className={className}
       contentMain={
         <Link
           href={pathForPhoto({ photo })}
@@ -141,12 +159,9 @@ export default function PhotoLarge({
           {/* Meta */}
           <div className="pr-2 md:pr-0">
             <div className="md:relative flex gap-2 items-start">
-              {(photo.title || SHOW_PHOTO_TITLE_FALLBACK_TEXT) &&
-                <PhotoLink
-                  photo={photo}
-                  className="font-bold uppercase flex-grow"
-                  prefetch={prefetch}
-                />}
+              {hasTitle && (showTitleAsH1
+                ? <h1>{renderPhotoLink()}</h1>
+                : renderPhotoLink())}
               <div className="absolute right-0 translate-y-[-4px] z-10">
                 <AdminPhotoMenuClient {...{
                   photo,
@@ -158,7 +173,11 @@ export default function PhotoLarge({
             </div>
             <div className="space-y-baseline">
               {photo.caption &&
-                <div className="uppercase">
+                <div className={clsx(
+                  'uppercase', 
+                  // Prevent collision with admin button
+                  isUserSignedIn && 'md:pr-7',
+                )}>
                   {photo.caption}
                 </div>}
               {(showCameraContent || showTagsContent) &&
@@ -217,35 +236,48 @@ export default function PhotoLarge({
                   />}
               </>}
             <div className={clsx(
-              'flex gap-x-2 gap-y-baseline',
-              'md:flex-col md:justify-normal',
+              'flex gap-x-2.5 gap-y-baseline',
+              ALLOW_PUBLIC_DOWNLOADS
+                ? 'flex-col'
+                : 'md:flex-col',
+              'md:justify-normal',
             )}>
               <PhotoDate
                 photo={photo}
                 className={clsx(
                   'text-medium',
-                  // Prevent date collision with admin button
+                  // Prevent collision with admin button
                   !hasNonDateContent && isUserSignedIn && 'md:pr-7',
                 )}
               />
-              {shouldShare &&
-                <ShareButton
-                  className={clsx(
-                    'md:translate-x-[-2.5px]',
-                    'translate-y-[1.5px] md:translate-y-0',
-                  )}
-                  path={pathForPhotoShare({
-                    photo,
-                    tag: shouldShareTag ? primaryTag : undefined,
-                    camera: shouldShareCamera ? camera : undefined,
-                    // eslint-disable-next-line max-len
-                    simulation: shouldShareSimulation ? photo.filmSimulation : undefined,
-                    // eslint-disable-next-line max-len
-                    focal: shouldShareFocalLength ? photo.focalLength : undefined,
-                  })}
-                  prefetch={prefetchRelatedLinks}
-                  shouldScroll={shouldScrollOnShare}
-                />}
+              <div className={clsx(
+                'flex gap-1 translate-y-[0.5px]',
+                ALLOW_PUBLIC_DOWNLOADS
+                  ? 'translate-x-[-2.5px]'
+                  : 'md:translate-x-[-2.5px]',
+              )}>
+                {shouldShare &&
+                  <ShareButton
+                    path={pathForPhotoShare({
+                      photo,
+                      tag: shouldShareTag ? primaryTag : undefined,
+                      camera: shouldShareCamera ? camera : undefined,
+                      // eslint-disable-next-line max-len
+                      simulation: shouldShareSimulation ? photo.filmSimulation : undefined,
+                      // eslint-disable-next-line max-len
+                      focal: shouldShareFocalLength ? photo.focalLength : undefined,
+                    })}
+                    prefetch={prefetchRelatedLinks}
+                    shouldScroll={shouldScrollOnShare}
+                  />}
+                {ALLOW_PUBLIC_DOWNLOADS && 
+                  <DownloadButton 
+                    className={clsx(
+                      'translate-y-[0.5px] md:translate-y-0',
+                    )}
+                    photo={photo} 
+                  />}
+              </div>
             </div>
           </div>
         </DivDebugBaselineGrid>}
