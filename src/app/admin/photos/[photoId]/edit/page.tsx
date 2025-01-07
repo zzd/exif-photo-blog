@@ -11,10 +11,12 @@ import { blurImageFromUrl, resizeImageFromUrl } from '@/photo/server';
 import { getNextImageUrlForManipulation } from '@/services/next-image';
 
 export default async function PhotoEditPage({
-  params: { photoId },
+  params,
 }: {
-  params: { photoId: string }
+  params: Promise<{ photoId: string }>
 }) {
+  const { photoId } = await params;
+
   const photo = await getPhotoNoStore(photoId, true);
 
   if (!photo) { redirect(PATH_ADMIN); }
@@ -26,13 +28,13 @@ export default async function PhotoEditPage({
   // Only generate image thumbnails when AI generation is enabled
   const imageThumbnailBase64 = AI_TEXT_GENERATION_ENABLED
     ? await resizeImageFromUrl(
-      getNextImageUrlForManipulation(photo.url, IS_PREVIEW)
+      getNextImageUrlForManipulation(photo.url, IS_PREVIEW),
     )
     : '';
 
   const blurData = BLUR_ENABLED
     ? await blurImageFromUrl(
-      getNextImageUrlForManipulation(photo.url, IS_PREVIEW)
+      getNextImageUrlForManipulation(photo.url, IS_PREVIEW),
     )
     : '';
 

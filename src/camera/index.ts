@@ -9,11 +9,11 @@ export type Camera = {
 };
 
 export interface CameraProps {
-  params: Camera
+  params: Promise<Camera>
 }
 
 export interface PhotoCameraProps {
-  params: Camera & { photoId: string }
+  params: Promise<Camera & { photoId: string }>
 }
 
 export type CameraWithCount = {
@@ -58,7 +58,7 @@ export const cameraFromPhoto = (
 export const formatCameraText = (
   { make: makeRaw, model: modelRaw }: Camera,
   includeMake: 'always' | 'never' | 'if-not-apple' = 'if-not-apple',
-  removeIPhoneOnLongModels?: boolean
+  removeIPhoneOnLongModels?: boolean,
 ) => {
   // Remove 'Corporation' from makes like 'Nikon Corporation'
   const make = makeRaw.replace(/ Corporation/i, '');

@@ -46,18 +46,19 @@ export default function AdminAddAllUploads({
   const router = useRouter();
 
   const addedUploadCount = useRef(0);
-  const addUploadUrls = async (uploadUrls: string[]) => {
+  const addUploadUrls = async (uploadUrls: string[], isFinalBatch: boolean) => {
     try {
       const stream = await addAllUploadsAction({
         uploadUrls,
         tags: showTags ? tags : undefined,
         takenAtLocal: generateLocalPostgresString(),
         takenAtNaiveLocal: generateLocalNaivePostgresString(),
+        shouldRevalidateAllKeysAndPaths: isFinalBatch,
       });
       for await (const data of readStreamableValue(stream)) {
         setButtonText(addedUploadCount.current === 0
           ? `Adding 1 of ${storageUrls.length}`
-          : `Adding ${addedUploadCount.current + 1} of ${storageUrls.length}`
+          : `Adding ${addedUploadCount.current + 1} of ${storageUrls.length}`,
         );
         setUrlAddStatuses(current => {
           const update = current.map(status =>
@@ -69,7 +70,7 @@ export default function AdminAddAllUploads({
                 statusMessage: data.statusMessage,
                 progress: data.progress,
               }
-              : status
+              : status,
           );
           addedUploadCount.current = update
             .filter(({ status }) => status === 'added')
@@ -152,8 +153,11 @@ export default function AdminAddAllUploads({
                   const uploadsToAdd = storageUrls.slice();
                   try {
                     while (uploadsToAdd.length > 0) {
+                      const nextBatch = uploadsToAdd
+                        .splice(0, UPLOAD_BATCH_SIZE);
                       await addUploadUrls(
-                        uploadsToAdd.splice(0, UPLOAD_BATCH_SIZE),
+                        nextBatch,
+                        uploadsToAdd.length === 0,
                       );
                     }
                     setButtonText('Complete');
