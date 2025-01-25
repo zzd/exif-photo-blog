@@ -9,25 +9,23 @@ import ChecklistRow from '../components/ChecklistRow';
 import { FiExternalLink } from 'react-icons/fi';
 import {
   BiCog,
-  BiCopy,
   BiData,
   BiHide,
   BiLockAlt,
   BiPencil,
 } from 'react-icons/bi';
-import Container from '@/components/Container';
 import Checklist from '@/components/Checklist';
-import { toastSuccess } from '@/toast';
 import { ConfigChecklistStatus } from './config';
 import StatusIcon from '@/components/StatusIcon';
 import { labelForStorage } from '@/services/storage';
 import { HiSparkles } from 'react-icons/hi';
-import LoaderButton from '@/components/primitives/LoaderButton';
 import { testConnectionsAction } from '@/admin/actions';
 import ErrorNote from '@/components/ErrorNote';
-import Spinner from '@/components/Spinner';
 import WarningNote from '@/components/WarningNote';
 import { RiSpeedMiniLine } from 'react-icons/ri';
+import Link from 'next/link';
+import SecretGenerator from './SecretGenerator';
+import CopyButton from '@/components/CopyButton';
 
 export default function SiteChecklistClient({
   // Storage
@@ -59,6 +57,7 @@ export default function SiteChecklistClient({
   arePhotoOGImagesStaticallyOptimized,
   arePhotoCategoriesStaticallyOptimized,
   areOriginalUploadsPreserved,
+  isBlurEnabled,
   // Display
   showExifInfo,
   showTakenAtTimeHidden,
@@ -70,7 +69,6 @@ export default function SiteChecklistClient({
   hasDefaultTheme,
   defaultTheme,
   arePhotosMatted,
-  isBlurEnabled,
   isGeoPrivacyEnabled,
   gridAspectRatio,
   hasGridAspectRatio,
@@ -84,6 +82,7 @@ export default function SiteChecklistClient({
   baseUrl,
   commitSha,
   commitMessage,
+  commitUrl,
   // Connection status
   databaseError,
   storageError,
@@ -92,12 +91,10 @@ export default function SiteChecklistClient({
   // Component props
   simplifiedView,
   isTestingConnections,
-  secret,
 }: ConfigChecklistStatus &
   Partial<Awaited<ReturnType<typeof testConnectionsAction>>> & {
   simplifiedView?: boolean
   isTestingConnections?: boolean
-  secret?: string
 }) {
   const renderLink = (href: string, text: string, external = true) =>
     <>
@@ -120,23 +117,6 @@ export default function SiteChecklistClient({
         </>}
     </>;
 
-  const renderCopyButton = (label: string, text?: string, subtle?: boolean) =>
-    <LoaderButton
-      icon={<BiCopy size={15} />}
-      className={clsx(
-        'translate-y-[2px]',
-        subtle && 'text-gray-300 dark:text-gray-700',
-      )}
-      onClick={text
-        ? () => {
-          navigator.clipboard.writeText(text);
-          toastSuccess(`${label} copied to clipboard`);
-        }
-        : undefined}
-      styleAs="link"
-      disabled={!text}
-    />;
-
   const renderEnvVar = (
     variable: string,
     minimal?: boolean,
@@ -157,7 +137,7 @@ export default function SiteChecklistClient({
         )}>
           `{variable}`
         </span>
-        {!minimal && renderCopyButton(variable, variable, true)}
+        {!minimal && <CopyButton label={variable} text={variable} subtle />}
       </span>
     </div>;
 
@@ -321,18 +301,7 @@ export default function SiteChecklistClient({
             Store auth secret in environment variable:
             {!hasAuthSecret &&
               <div className="overflow-x-auto">
-                <Container className="my-1.5 inline-flex" padding="tight">
-                  <div className={clsx(
-                    'flex flex-nowrap items-center gap-2 leading-none -mx-1',
-                  )}>
-                    {secret ? <span>{secret}</span> : <Spinner />}
-                    <div
-                      className="flex items-center gap-0.5 translate-y-[-2px]"
-                    >
-                      {renderCopyButton('Secret', secret)}
-                    </div>
-                  </div>
-                </Container>
+                <SecretGenerator />
               </div>}
             {renderEnvVars(['AUTH_SECRET'])}
           </ChecklistRow>
@@ -481,6 +450,15 @@ export default function SiteChecklistClient({
               image uploads being compressed before storing:
               {renderEnvVars(['NEXT_PUBLIC_PRESERVE_ORIGINAL_UPLOADS'])}
             </ChecklistRow>
+            <ChecklistRow
+              title="Image blur"
+              status={isBlurEnabled}
+              optional
+            >
+              Set environment variable to {'"1"'} to prevent
+              image blur data being stored and displayed:
+              {renderEnvVars(['NEXT_PUBLIC_BLUR_DISABLED'])}
+            </ChecklistRow>
           </Checklist>
           <Checklist
             title="Display"
@@ -570,15 +548,6 @@ export default function SiteChecklistClient({
               {renderEnvVars(['NEXT_PUBLIC_MATTE_PHOTOS'])}
             </ChecklistRow>
             <ChecklistRow
-              title="Image blur"
-              status={isBlurEnabled}
-              optional
-            >
-              Set environment variable to {'"1"'} to prevent
-              image blur data being stored and displayed:
-              {renderEnvVars(['NEXT_PUBLIC_BLUR_DISABLED'])}
-            </ChecklistRow>
-            <ChecklistRow
               title="Geo privacy"
               status={isGeoPrivacyEnabled}
               optional
@@ -664,7 +633,15 @@ export default function SiteChecklistClient({
               <span className="font-bold">Commit</span>
               &nbsp;&nbsp;
               {commitSha
-                ? <span title={commitMessage}>{commitSha}</span>
+                ? commitUrl
+                  ? <Link
+                    title={commitMessage}
+                    href={commitUrl}
+                    target="_blank"
+                  >
+                    {commitSha}
+                  </Link>
+                  : <span title={commitMessage}>{commitSha}</span>
                 : 'Not Found'}
             </div>
           </div>}

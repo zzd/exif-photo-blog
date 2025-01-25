@@ -14,10 +14,23 @@ export const SITE_TITLE =
   'Photo Blog';
 
 // SOURCE
-export const VERCEL_COMMIT_MESSAGE =
+const VERCEL_GIT_PROVIDER =
+  process.env.NEXT_PUBLIC_VERCEL_GIT_PROVIDER;
+const VERCEL_GIT_REPO_OWNER =
+  process.env.NEXT_PUBLIC_VERCEL_GIT_REPO_OWNER;
+const VERCEL_GIT_REPO_SLUG =
+  process.env.NEXT_PUBLIC_VERCEL_GIT_REPO_SLUG;
+const VERCEL_GIT_COMMIT_MESSAGE =
   process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_MESSAGE;
-export const VERCEL_COMMIT_SHA =
+const VERCEL_GIT_COMMIT_SHA =
   process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA;
+const VERCEL_GIT_COMMIT_SHA_SHORT = VERCEL_GIT_COMMIT_SHA
+  ? VERCEL_GIT_COMMIT_SHA.slice(0, 7)
+  : undefined;
+const VERCEL_GIT_COMMIT_URL = VERCEL_GIT_PROVIDER === 'github'
+  // eslint-disable-next-line max-len
+  ? `https://github.com/${VERCEL_GIT_REPO_OWNER}/${VERCEL_GIT_REPO_SLUG}/commit/${VERCEL_GIT_COMMIT_SHA}`
+  : undefined;
 
 const VERCEL_ENV = process.env.NEXT_PUBLIC_VERCEL_ENV;
 const VERCEL_PRODUCTION_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL;
@@ -145,6 +158,8 @@ export const PRESERVE_ORIGINAL_UPLOADS =
   process.env.NEXT_PUBLIC_PRESERVE_ORIGINAL_UPLOADS === '1' ||
   // Legacy environment variable name
   process.env.NEXT_PUBLIC_PRO_MODE === '1';
+export const BLUR_ENABLED =
+  process.env.NEXT_PUBLIC_BLUR_DISABLED !== '1';
 
 // DISPLAY
 
@@ -171,8 +186,6 @@ export const DEFAULT_THEME =
       : 'system';
 export const MATTE_PHOTOS =
   process.env.NEXT_PUBLIC_MATTE_PHOTOS === '1';
-export const BLUR_ENABLED =
-  process.env.NEXT_PUBLIC_BLUR_DISABLED !== '1';
 export const GEO_PRIVACY_ENABLED =
   process.env.NEXT_PUBLIC_GEO_PRIVACY === '1';
 export const GRID_ASPECT_RATIO =
@@ -246,6 +259,7 @@ export const CONFIG_CHECKLIST_STATUS = {
   arePhotoOGImagesStaticallyOptimized: STATICALLY_OPTIMIZED_PHOTO_OG_IMAGES,
   arePhotoCategoriesStaticallyOptimized: STATICALLY_OPTIMIZED_PHOTO_CATEGORIES,
   areOriginalUploadsPreserved: PRESERVE_ORIGINAL_UPLOADS,
+  isBlurEnabled: BLUR_ENABLED,
   // DISPLAY
   showExifInfo: SHOW_EXIF_DATA,
   showTakenAtTimeHidden: SHOW_TAKEN_AT_TIME,
@@ -257,7 +271,6 @@ export const CONFIG_CHECKLIST_STATUS = {
   hasDefaultTheme: Boolean(process.env.NEXT_PUBLIC_DEFAULT_THEME),
   defaultTheme: DEFAULT_THEME,
   arePhotosMatted: MATTE_PHOTOS,
-  isBlurEnabled: BLUR_ENABLED,
   isGeoPrivacyEnabled: GEO_PRIVACY_ENABLED,
   gridAspectRatio: GRID_ASPECT_RATIO,
   hasGridAspectRatio: Boolean(process.env.NEXT_PUBLIC_GRID_ASPECT_RATIO),
@@ -270,8 +283,9 @@ export const CONFIG_CHECKLIST_STATUS = {
   isOgTextBottomAligned: OG_TEXT_BOTTOM_ALIGNMENT,
   // MISC
   baseUrl: BASE_URL,
-  commitSha: VERCEL_COMMIT_SHA ? VERCEL_COMMIT_SHA.slice(0, 7) : undefined,
-  commitMessage: VERCEL_COMMIT_MESSAGE,
+  commitSha: VERCEL_GIT_COMMIT_SHA_SHORT,
+  commitMessage: VERCEL_GIT_COMMIT_MESSAGE,
+  commitUrl: VERCEL_GIT_COMMIT_URL,
 };
 
 export type ConfigChecklistStatus = typeof CONFIG_CHECKLIST_STATUS;
