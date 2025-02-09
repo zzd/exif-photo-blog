@@ -1,5 +1,6 @@
 'use client';
 
+import PhotoCamera from '@/camera/PhotoCamera';
 import Badge from '@/components/Badge';
 import DivDebugBaselineGrid from '@/components/DivDebugBaselineGrid';
 import FieldSetWithStatus from '@/components/FieldSetWithStatus';
@@ -42,7 +43,7 @@ export default function ComponentsPage() {
           </div>
           <div className={clsx(
             'flex gap-1',
-            '[&>*]:inline-flex [&>*]:gap-1 [&_input]:-translate-y-0.5',
+            '*:inline-flex *:gap-1 [&_input]:-translate-y-0.5',
           )}>
             <FieldSetWithStatus
               id="grid"
@@ -61,7 +62,7 @@ export default function ComponentsPage() {
           </div>
         </h1>
         <DivDebugBaselineGrid className="flex gap-8">
-          <div className="[&>*]:flex">
+          <div className="*:flex">
             <div>
               <LabeledIcon
                 icon={<FaCamera size={12} />}
@@ -228,13 +229,25 @@ export default function ComponentsPage() {
             </div>
           </div>
           <div className={clsx(
-            debugComponents && '[&>*]:bg-gray-300 [&>*]:dark:bg-gray-700',
-            '[&>*]:flex',
+            debugComponents && '*:bg-gray-300 dark:*:bg-gray-700',
+            '*:flex',
           )}>
             {DEBUG_LINES.map((_, i) =>
               <div key={i}>
                 Line {(i + 1).toString().padStart(2, '0')}
               </div>,
+            )}
+          </div>
+          <div className={clsx(
+            debugComponents && '*:bg-gray-300 dark:*:bg-gray-700',
+            '*:flex',
+          )}>
+            {DEBUG_LINES.map((_, i) =>
+              <PhotoCamera
+                key={i}
+                camera={{ make: 'Canon', model: 'Canon EOS 800D' }}
+                contrast="high"
+              />,
             )}
           </div>
         </DivDebugBaselineGrid>

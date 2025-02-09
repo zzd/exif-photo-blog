@@ -28,6 +28,7 @@ import SecretGenerator from './SecretGenerator';
 import CopyButton from '@/components/CopyButton';
 import { PiPaintBrushHousehold } from 'react-icons/pi';
 import { IoMdGrid } from 'react-icons/io';
+import { CgDebug } from 'react-icons/cg';
 
 export default function SiteChecklistClient({
   // Storage
@@ -86,6 +87,11 @@ export default function SiteChecklistClient({
   isPublicApiEnabled,
   isPriorityOrderEnabled,
   isOgTextBottomAligned,
+  // Internal
+  areInternalToolsEnabled,
+  areAdminDebugToolsEnabled,
+  isAdminDbOptimizeEnabled,
+  isAdminSqlDebugEnabled,
   // Misc
   baseUrl,
   commitSha,
@@ -418,7 +424,9 @@ export default function SiteChecklistClient({
             >
               Comma-separated fields to auto-generate when
               uploading photos. Accepted values: title, caption,
-              tags, description, all, or none (default is {'"all"'}):
+              tags, description, all, or none
+              {' '}
+              (default: {'"title, tags, semantic"'}):
               {renderEnvVars(['AI_TEXT_AUTO_GENERATED_FIELDS'])}
             </ChecklistRow>
           </Checklist>
@@ -657,6 +665,40 @@ export default function SiteChecklistClient({
               {renderEnvVars(['NEXT_PUBLIC_OG_TEXT_ALIGNMENT'])}
             </ChecklistRow>
           </Checklist>
+          {areInternalToolsEnabled &&
+            <Checklist
+              title="Internal"
+              icon={<CgDebug size={16} />}
+              optional
+            >
+              <ChecklistRow
+                title="Debug tools"
+                status={areAdminDebugToolsEnabled}
+                optional
+              >
+                Set environment variable to {'"1"'} to temporarily enable
+                features like photo matting, baseline grid, etc.:
+                {renderEnvVars(['ADMIN_DEBUG_TOOLS'])}
+              </ChecklistRow>
+              <ChecklistRow
+                title="DB optimize"
+                status={isAdminDbOptimizeEnabled}
+                optional
+              >
+                Set environment variable to {'"1"'} to prevent
+                homepages from seeding infinite scroll on load:
+                {renderEnvVars(['ADMIN_DB_OPTIMIZE'])}
+              </ChecklistRow>
+              <ChecklistRow
+                title="SQL debugging"
+                status={isAdminSqlDebugEnabled}
+                optional
+              >
+                Set environment variable to {'"1"'} to enable
+                console output for all sql queries:
+                {renderEnvVars(['ADMIN_SQL_DEBUG'])}
+              </ChecklistRow>
+            </Checklist>}
         </>}
       </div>
       <div className="pl-11 pr-2 sm:pr-11 mt-4 md:mt-7">

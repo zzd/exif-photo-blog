@@ -4,11 +4,11 @@ https://github.com/sambecker/exif-photo-blog/assets/169298/4253ea54-558a-4358-88
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/sambecker-pro/clone?demo-description=Store%20photos%20with%20original%20camera%20data&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F39rys245Px3FVBGRJNYEON%2Fbf68d5c052bda9e9e5bec21878764bc3%2Fimage.png&demo-title=Photo%20Blog&demo-url=https%3A%2F%2Fphotos.sambecker.com&from=templates&project-name=Photo%20Blog&repository-name=exif-photo-blog&repository-url=https%3A%2F%2Fgithub.com%2Fsambecker%2Fexif-photo-blog&skippable-integrations=1&stores=%5B%7B%22type%22%3A%22postgres%22%7D%2C%7B%22type%22%3A%22blob%22%7D%5D&teamCreateStatus=hidden)
 
-Demo App
+🎬&nbsp;&nbsp;Demo
 -
 https://photos.sambecker.com
 
-Features
+✨&nbsp;&nbsp;Features
 -
 - Built-in auth
 - Photo upload with EXIF extraction
@@ -22,7 +22,7 @@ Features
 
 <img src="/readme/og-image-share.png" alt="OG Image Preview" width=600 />
 
-Installation
+🛠️&nbsp;&nbsp;Installation
 -
 ### 1. Deploy to Vercel
 
@@ -48,19 +48,23 @@ Installation
 3. Add optional title
 4. Click "Create"
 
-Receiving updates
--
-If you don't plan to change the code, or don't mind making your updates public, you should consider [forking](https://github.com/sambecker/exif-photo-blog/fork) this repo to easily receive future updates. If you've already setup your project on Vercel [see detailed instructions](https://github.com/sambecker/exif-photo-blog?tab=readme-ov-file#how-do-i-receive-template-updates) here.
+If you don't plan to change the code, or don't mind making your updates public, consider forking this repo to easily receive future updates. If you've already setup your project on Vercel see detailed instructions here on reconfiguring your project.
 
-Develop locally
+🔄&nbsp;&nbsp;Receiving updates
+-
+If you don't plan to change the code, or don't mind making your updates public, consider [forking](https://github.com/sambecker/exif-photo-blog/fork) this repo to easily receive future updates. If you've already set up your project on Vercel see these [migration instructions](#how-do-i-receive-template-updates).
+
+💻&nbsp;&nbsp;Local development
 -
 1. Clone code
 2. Run `pnpm i` to install dependencies
 3. If necessary, install [Vercel CLI](https://vercel.com/docs/cli#installing-vercel-cli) and authenticate by running `vercel login`
-4. Run `vercel link` to connect the CLI to your project
+4. Run `vercel link` to connect CLI to your project
 5. Run `vercel dev` to start dev server with Vercel-managed environment variables
 
-Further customization
+See FAQ for [limitations of local development](#can-i-work-locally-without-access-to-an-image-storage-provider)
+
+🎨&nbsp;&nbsp;Further customization
 -
 ### AI text generation
 
@@ -77,11 +81,11 @@ _⚠️ READ BEFORE PROCEEDING_
 3. Configure auto-generated fields (optional) 
    - Set which text fields auto-generate when uploading a photo by storing a comma-separated list, e.g., `AI_TEXT_AUTO_GENERATED_FIELDS = title, semantic`
    - Accepted values:
-     - `all` (default)
-     - `title`
+     - `all`
+     - `title` (default)
      - `caption`
-     - `tags`
-     - `semantic`
+     - `tags` (default)
+     - `semantic` (default)
      - `none`
 
 ### Web Analytics
@@ -106,7 +110,7 @@ Application behavior can be changed by configuring the following environment var
 - `NEXT_PUBLIC_SITE_ABOUT` (seen in grid sidebar—accepts rich formatting tags: `<b>`, `<strong>`, `<i>`, `<em>`, `<u>`, `<br>`)
 
 #### Performance
-> ⚠️ Enabling may result in increased project usage. Static optimization [troubleshooting hints](https://github.com/sambecker/exif-photo-blog?tab=readme-ov-file#why-do-production-deployments-fail-when-static-optimization-is-enabled) in FAQ.
+> ⚠️ Enabling may result in increased project usage. Static optimization [troubleshooting hints](#why-do-production-deployments-fail-when-static-optimization-is-enabled) in FAQ.
 - `NEXT_PUBLIC_STATICALLY_OPTIMIZE_PHOTOS = 1` enables static optimization for photo pages (`p/[photoId]`), i.e., renders pages at build time
 - `NEXT_PUBLIC_STATICALLY_OPTIMIZE_PHOTO_OG_IMAGES = 1` enables static optimization for OG images, i.e., renders images at build time
 - `NEXT_PUBLIC_STATICALLY_OPTIMIZE_PHOTO_CATEGORIES = 1` enables static optimization for photo categories (`tag/[tag]`, `shot-on/[make]/[model]`, etc.), i.e., renders pages at build time
@@ -143,7 +147,7 @@ Application behavior can be changed by configuring the following environment var
 
 ## Alternate storage providers
 
-Only one storage adapter—Vercel Blob, Cloudflare R2, or AWS S3—can be used at a time. Ideally, this is configured before photos are uploaded (see [Issue #34](https://github.com/sambecker/exif-photo-blog/issues/34) for migration considerations). If you have multiple adapters, you can set one as preferred by storing "aws-s3," "cloudflare-r2," or "vercel-blob" in `NEXT_PUBLIC_STORAGE_PREFERENCE`.
+Only one storage adapter—Vercel Blob, Cloudflare R2, or AWS S3—can be used at a time. Ideally, this is configured before photos are uploaded (see [Issue #34](https://github.com/sambecker/exif-photo-blog/issues/34) for migration considerations). If you have multiple adapters, you can set one as preferred by storing `aws-s3`, `cloudflare-r2`, or `vercel-blob` in `NEXT_PUBLIC_STORAGE_PREFERENCE`. See [FAQ](#will-there-be-support-for-image-storage-providers-beyond-vercel-aws-and-cloudflare) regarding unsupported providers.
 
 ### Cloudflare R2
 
@@ -237,7 +241,7 @@ Vercel Postgres can be switched to another Postgres-compatible, pooling provider
 1. Ensure connection string is set to "Transaction Mode" via port `6543`
 2. Disable SSL by setting `DISABLE_POSTGRES_SSL = 1`
 
-FAQ
+📖&nbsp;&nbsp;FAQ
 -
 #### How do I receive template updates?
 > For forked repos, click "Code," then "Update branch" from the main repo page. If you originally cloned the code, you can [create a fork](https://github.com/sambecker/exif-photo-blog/fork) from GitHub, then update your Git connection from your Vercel project settings. Once you've done this, you may need to go to your project deployments page, click •••, select "Create deployment," and choose `main`.
@@ -289,6 +293,12 @@ FAQ
 
 #### I've added my OpenAI key but can't seem to make it work. Why am I seeing connection errors?
 > You may need to pre-purchase credits before accessing the OpenAI API. See [Issue #110](https://github.com/sambecker/exif-photo-blog/issues/110) for discussion.
+
+#### Will there be support for image storage providers beyond Vercel, AWS, and Cloudflare?
+> At this time, there are no plans to introduce support for new storage providers. While configuring a new, AWS-compatible provider (e.g., Cloudflare R2) should not be too difficult, there's nuance to consider surrounding details like IAM, CORS, and domain configuration, which can differ slightly from platform to platform. If you’d like to contribute an implementation for a new storage provider, please open a PR.
+
+#### Can I work locally without access to an image storage provider?
+> At this time, an external storage provider is necessary in order to develop locally. If you have a strategy to propose which allows files to be locally uploaded and served to `next/image` in away that mirrors an external storage provider for debugging purposes, please open a PR.
 
 #### Can this template run in a docker image?
 > Possibly. See [Issue #116](https://github.com/sambecker/exif-photo-blog/issues/116) for discussion.

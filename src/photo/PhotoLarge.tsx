@@ -131,7 +131,7 @@ export default function PhotoLarge({
   const renderPhotoLink = () =>
     <PhotoLink
       photo={photo}
-      className="font-bold uppercase flex-grow"
+      className="font-bold uppercase grow"
       prefetch={prefetch}
     />;
 
@@ -171,7 +171,7 @@ export default function PhotoLarge({
     </div>;
 
   const largePhotoContainerClassName = clsx(arePhotosMatted &&
-    'flex items-center justify-center aspect-[3/2] bg-gray-100',
+    'flex items-center justify-center aspect-3/2 bg-gray-100',
   );
 
   return (
@@ -262,7 +262,13 @@ export default function PhotoLarge({
                       <>
                         {' '}
                         <Tooltip content="35mm equivalent" sideOffset={3}>
-                          <span className="text-extra-dim">
+                          <span
+                            className={clsx(
+                              'text-extra-dim',
+                              'decoration-dotted underline-offset-[3px]',
+                              'hover:underline',
+                            )}
+                          >
                             {photo.focalLengthIn35MmFormatFormatted}
                           </span>
                         </Tooltip>
