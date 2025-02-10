@@ -11,11 +11,40 @@ export default function useImageZoomControls(
 ) {
   const viewerRef = useRef<Viewer | null>(null);
 
+  const viewerContainerRef = useRef<HTMLDivElement>(null);
+
   const { setShouldRespondToKeyboardCommands } = useAppState();
+
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   const [colorLight, setColorLight] = useState<string>();
 
   useMetaThemeColor({ colorLight });
+
+  const open = useCallback(() => {
+    viewerRef.current?.show();
+  }, [viewerRef]);
+
+  const close = useCallback(() => {
+    viewerRef.current?.hide();
+  }, [viewerRef]);
+
+  const zoomTo = useCallback((zoomLevel = 1) => {
+    viewerRef.current?.zoomTo(zoomLevel);
+  }, [viewerRef]);
+
+  const reset = useCallback(() => {
+    setZoomLevel(1);
+    viewerRef.current?.reset();
+  }, [viewerRef]);
+
+  // On 'F' keydown, toggle fullscreen
+  const handleKeyDown = useCallback(() => {
+    if (shouldExpandOnFKeydown) {
+      viewerRef.current?.show();
+    }
+  }, [shouldExpandOnFKeydown]);
+  useKeydownHandler(handleKeyDown, ['F']);
 
   useEffect(() => {
     if (imageRef.current && isEnabled) {
@@ -27,6 +56,10 @@ export default function useImageZoomControls(
           reset: 2,
           zoomOut: 3,
         },
+        ready: ({ target }) => {
+          viewerContainerRef.current =
+            (target as any).viewer.viewer as HTMLDivElement;
+        },
         url: (image: HTMLImageElement) => {
           image.loading = 'eager';
           return image.src;
@@ -36,37 +69,36 @@ export default function useImageZoomControls(
           setColorLight('#000');
         },
         hide: () => {
-          setTimeout(() => setColorLight(undefined), 300);
+          setTimeout(() => {
+            setColorLight(undefined);
+          }, 300);
         },
         hidden: () => {
           setShouldRespondToKeyboardCommands?.(true);
         },
+        zoom: ({ detail: { ratio } }) => {
+          setZoomLevel(ratio);
+        },
       });
+
       return () => {
         viewerRef.current?.destroy();
         viewerRef.current = null;
       };
     }
-  }, [imageRef, isEnabled, setShouldRespondToKeyboardCommands]);
-
-  const open = useCallback(() => {
-    viewerRef.current?.show();
-  }, [viewerRef]);
-
-  const close = useCallback(() => {
-    viewerRef.current?.hide();
-  }, [viewerRef]);
-
-  // On 'F' keydown, toggle fullscreen
-  const handleKeyDown = useCallback(() => {
-    if (shouldExpandOnFKeydown) {
-      viewerRef.current?.show();
-    }
-  }, [shouldExpandOnFKeydown]);
-  useKeydownHandler(handleKeyDown, ['F']);
+  }, [
+    imageRef,
+    isEnabled,
+    zoomTo,
+    setShouldRespondToKeyboardCommands,
+  ]);
 
   return {
     open,
     close,
+    reset,
+    zoomTo,
+    zoomLevel,
+    viewerContainerRef,
   };
 }
