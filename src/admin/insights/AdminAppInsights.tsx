@@ -10,24 +10,12 @@ import {
   APP_CONFIGURATION,
   GRID_HOMEPAGE_ENABLED,
   HAS_STATIC_OPTIMIZATION,
-  IS_DEVELOPMENT,
-  IS_PRODUCTION,
-  IS_VERCEL_GIT_PROVIDER_GITHUB,
   MATTE_PHOTOS,
-  VERCEL_GIT_BRANCH,
-  VERCEL_GIT_COMMIT_SHA,
-  VERCEL_GIT_REPO_OWNER,
-  VERCEL_GIT_REPO_SLUG,
-} from '@/app-core/config';
-import { getGitHubMeta } from '../../platforms/github';
+} from '@/app/config';
 import { OUTDATED_THRESHOLD } from '@/photo';
+import { getGitHubMetaForCurrentApp, getSignificantInsights } from '.';
 
 const BASIC_PHOTO_INSTALLATION_COUNT = 32;
-
-const owner   = VERCEL_GIT_REPO_OWNER;
-const repo    = VERCEL_GIT_REPO_SLUG;
-const branch  = VERCEL_GIT_BRANCH;
-const commit  = VERCEL_GIT_COMMIT_SHA;
 
 export default async function AdminAppInsights() {
   const [
@@ -49,30 +37,29 @@ export default async function AdminAppInsights() {
     getUniqueCameras(),
     getUniqueFilmSimulations(),
     getUniqueFocalLengths(),
-    IS_VERCEL_GIT_PROVIDER_GITHUB || IS_DEVELOPMENT
-      ? getGitHubMeta({
-        owner,
-        repo,
-        branch,
-        commit,
-      })
-      : undefined,
+    getGitHubMetaForCurrentApp(),
   ]);
+  
+  const { isAiTextGenerationEnabled } = APP_CONFIGURATION;
 
   const {
-    isAiTextGenerationEnabled,
-    hasVercelBlobStorage,
-  } = APP_CONFIGURATION;
+    forkBehind,
+    noAiRateLimiting,
+    outdatedPhotos,
+  } = getSignificantInsights({
+    codeMeta,
+    photosCountOutdated,
+  });
 
   return (
     <AdminAppInsightsClient
       codeMeta={codeMeta}
       insights={{
         noFork: !codeMeta?.isForkedFromBase && !codeMeta?.isBaseRepo,
-        forkBehind: Boolean(codeMeta?.isBehind),
+        forkBehind,
         noAi: !isAiTextGenerationEnabled,
-        noAiRateLimiting: isAiTextGenerationEnabled && !hasVercelBlobStorage,
-        outdatedPhotos: Boolean(photosCountOutdated),
+        noAiRateLimiting,
+        outdatedPhotos,
         photoMatting: photosCountPortrait > 0 && !MATTE_PHOTOS,
         gridFirst: (
           photosCount >= BASIC_PHOTO_INSTALLATION_COUNT &&
@@ -90,7 +77,6 @@ export default async function AdminAppInsights() {
         focalLengthsCount: focalLengths.length,
         dateRange,
       }}
-      debug={!IS_PRODUCTION}
     />
   );
 }

@@ -1,7 +1,7 @@
 import {
   getExtensionFromStorageUrl,
   getIdFromStorageUrl,
-} from '@/services/storage';
+} from '@/platforms/storage';
 import { convertExifToFormData } from '@/photo/form';
 import {
   getFujifilmSimulationFromMakerNote,
@@ -14,7 +14,7 @@ import sharp, { Sharp } from 'sharp';
 import {
   GEO_PRIVACY_ENABLED,
   PRESERVE_ORIGINAL_UPLOADS,
-} from '@/app-core/config';
+} from '@/app/config';
 
 const IMAGE_WIDTH_RESIZE = 200;
 const IMAGE_WIDTH_BLUR = 200;

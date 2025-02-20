@@ -1,14 +1,14 @@
 import { Camera } from '@/camera';
 import { formatFocalLength } from '@/focal';
 import { Lens } from '@/lens';
-import { getNextImageUrlForRequest } from '@/services/next-image';
+import { getNextImageUrlForRequest } from '@/platforms/next-image';
 import { FilmSimulation } from '@/simulation';
 import {
   HIGH_DENSITY_GRID,
   IS_PREVIEW,
   SHOW_EXIF_DATA,
-} from '@/app-core/config';
-import { ABSOLUTE_PATH_FOR_HOME_IMAGE } from '@/app-core/paths';
+} from '@/app/config';
+import { ABSOLUTE_PATH_FOR_HOME_IMAGE } from '@/app/paths';
 import { formatDate, formatDateFromPostgresString } from '@/utility/date';
 import {
   formatAperture,

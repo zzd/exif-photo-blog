@@ -2,21 +2,34 @@ import {
   TEMPLATE_REPO_OWNER,
   TEMPLATE_REPO_NAME,
   TEMPLATE_REPO_BRANCH,
-} from '@/app-core/config';
+  IS_DEVELOPMENT,
+} from '@/app/config';
 
 const DEFAULT_BRANCH = 'main';
-const CACHE_GITHUB_REQUESTS = false;
-
-// Cache all results for 2 minutes to avoid rate limiting
-// GitHub API requests limited to 60 requests per hour
-const FETCH_CONFIG: RequestInit | undefined= CACHE_GITHUB_REQUESTS
-  ? { next: { revalidate: 120 } } : undefined;
+const GITHUB_API_ERROR = 'API rate limit exceeded';
 
 interface RepoParams {
   owner?: string
   repo?: string
   branch?: string
   commit?: string
+};
+
+const fetchGitHub = async (
+  url: string,
+  cacheRequest = IS_DEVELOPMENT,
+) => {
+  const data = await fetch(
+    url,
+    // Cache all results for 2 minutes to avoid rate limiting
+    // GitHub API requests limited to 60 requests per hour
+    cacheRequest ? { next: { revalidate: 120 } } : undefined,
+  )
+    .then(response => response.json());
+  if ((data.message ?? '').includes(GITHUB_API_ERROR)) {
+    throw new Error(GITHUB_API_ERROR);
+  }
+  return data;
 };
 
 // Website urls
@@ -84,14 +97,12 @@ const getGitHubApiCompareToCommitUrl = ({ commit }: RepoParams = {}) =>
 // Requests
 
 export const getLatestBaseRepoCommitSha = async () => {
-  const response = await fetch(getGitHubApiCommitsUrl(), FETCH_CONFIG);
-  const data = await response.json();
+  const data = await fetchGitHub(getGitHubApiCommitsUrl());
   return data.sha ? data.sha.slice(0, 7) as string : undefined;
 };
 
 const getIsRepoForkedFromBase = async (params: RepoParams) => {
-  const response = await fetch(getGitHubApiRepoUrl(params), FETCH_CONFIG);
-  const data = await response.json();
+  const data = await fetchGitHub(getGitHubApiRepoUrl(params));
   return (
     Boolean(data.fork) &&
     data.source?.full_name === `${TEMPLATE_REPO_OWNER}/${TEMPLATE_REPO_NAME}`
@@ -99,20 +110,12 @@ const getIsRepoForkedFromBase = async (params: RepoParams) => {
 };
 
 const getGitHubCommitsBehindFromRepo = async (params?: RepoParams) => {
-  const response = await fetch(
-    getGitHubApiCompareToRepoUrl(params),
-    FETCH_CONFIG,
-  );
-  const data = await response.json();
+  const data = await fetchGitHub(getGitHubApiCompareToRepoUrl(params));
   return data.behind_by as number;
 };
 
 const getGitHubCommitsBehindFromCommit = async (params?: RepoParams) => {
-  const response = await fetch(
-    getGitHubApiCompareToCommitUrl(params),
-    FETCH_CONFIG,
-  );
-  const data = await response.json();
+  const data = await fetchGitHub(getGitHubApiCompareToCommitUrl(params));
   return data.behind_by as number;
 };
 
@@ -121,8 +124,8 @@ const isRepoBaseRepo = ({ owner, repo }: RepoParams) =>
   repo?.toLowerCase() === TEMPLATE_REPO_NAME;
 
 export const getGitHubPublicFork = async (): Promise<RepoParams> => {
-  const response = await fetch(getGitHubApiForksUrl(), FETCH_CONFIG);
-  const fork = (await response.json())[0];
+  const data = await fetchGitHub(getGitHubApiForksUrl());
+  const fork = data[0];
   return {
     owner: fork?.owner.login,
     repo: fork?.name,
@@ -130,6 +133,8 @@ export const getGitHubPublicFork = async (): Promise<RepoParams> => {
 };
 
 export const getGitHubMeta = async (params: RepoParams) => {
+  console.log('getGitHubMeta', params);
+
   const urlOwner = getGitHubUrlOwner(params);
   const urlRepo = getGitHubUrlRepo(params);
   const urlBranch = getGitHubUrlBranch(params);

@@ -1,4 +1,4 @@
-import { getStorageUploadUrlsNoStore } from '@/services/storage/cache';
+import { getStorageUploadUrlsNoStore } from '@/platforms/storage/cache';
 import {
   getPhotosMetaCached,
   getPhotosMostRecentUpdateCached,
@@ -8,7 +8,7 @@ import {
   PATH_ADMIN_PHOTOS,
   PATH_ADMIN_TAGS,
   PATH_ADMIN_UPLOADS,
-} from '@/app-core/paths';
+} from '@/app/paths';
 import AdminNavClient from './AdminNavClient';
 
 export default async function AdminNav() {
