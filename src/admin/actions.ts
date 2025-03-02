@@ -8,16 +8,18 @@ import { testStorageConnection } from '@/platforms/storage';
 import { APP_CONFIGURATION } from '@/app/config';
 import { getStorageUploadUrlsNoStore } from '@/platforms/storage/cache';
 import { getPhotosMetaCached, getUniqueTagsCached } from '@/photo/cache';
-import { getShouldShowInsightsIndicator } from '@/admin/insights/server';
+import { getInsightsIndicatorStatus } from '@/admin/insights/server';
+
+export type AdminData = Awaited<ReturnType<typeof getAdminDataAction>>;
 
 export const getAdminDataAction = async () =>
   runAuthenticatedAdminServerAction(async () => {
     const [
-      countPhotos,
-      countHiddenPhotos,
-      countTags,
-      countUploads,
-      shouldShowInsightsIndicator,
+      photosCount,
+      photosCountHidden,
+      tagsCount,
+      uploadsCount,
+      insightsIndicatorStatus,
     ] = await Promise.all([
       getPhotosMetaCached()
         .then(({ count }) => count)
@@ -34,15 +36,23 @@ export const getAdminDataAction = async () =>
           console.error(`Error getting blob upload urls: ${e}`);
           return 0;
         }),
-      getShouldShowInsightsIndicator(),
+      getInsightsIndicatorStatus(),
     ]);
 
+    const photosCountTotal = (
+      photosCount !== undefined &&
+      photosCountHidden !== undefined
+    )
+      ? photosCount + photosCountHidden
+      : undefined;
+
     return {
-      countPhotos,
-      countHiddenPhotos,
-      countTags,
-      countUploads,
-      shouldShowInsightsIndicator,
+      photosCount,
+      photosCountHidden,
+      photosCountTotal,
+      tagsCount,
+      uploadsCount,
+      insightsIndicatorStatus,
     };
   });
 

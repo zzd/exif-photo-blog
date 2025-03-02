@@ -10,30 +10,39 @@ import {
 import { PhotoDateRange } from '@/photo';
 import { getGitHubMeta } from '@/platforms/github';
 
-export type AdminAppInsight =
-  'noFork' |
-  'forkBehind' |
-  'noAi' |
-  'noAiRateLimiting' |
-  'outdatedPhotos' |
-  'photoMatting' |
-  'gridFirst' |
-  'noStaticOptimization';
+const AdminAppInsightCode = [
+  'noFork',
+  'forkBehind',
+] as const;
+type AdminAppInsightCode = typeof AdminAppInsightCode[number];
 
-const RECOMMENDATIONS: AdminAppInsight[] = [
+const _INSIGHTS_TEMPLATE = [
   'noAi',
   'noAiRateLimiting',
+  'noConfiguredDomain',
   'photoMatting',
+  'camerasFirst',
   'gridFirst',
   'noStaticOptimization',
-];
+] as const;
+type AdminAppInsightRecommendation = typeof _INSIGHTS_TEMPLATE[number];
+
+const _INSIGHTS_LIBRARY = [
+  'outdatedPhotos',
+] as const;
+type AdminAppInsightLibrary = typeof _INSIGHTS_LIBRARY[number];
+
+export type AdminAppInsight =
+  AdminAppInsightCode |
+  AdminAppInsightRecommendation |
+  AdminAppInsightLibrary;
 
 export type AdminAppInsights = Record<AdminAppInsight, boolean>
 
-export type InsightIndicatorStatus = 'blue' | 'yellow' | undefined;
+export type InsightsIndicatorStatus = 'blue' | 'yellow' | undefined;
 
 export const hasTemplateRecommendations = (insights: AdminAppInsights) =>
-  RECOMMENDATIONS.some(insight => insights[insight]);
+  _INSIGHTS_TEMPLATE.some(insight => insights[insight]);
 
 export interface PhotoStats {
   photosCount: number
@@ -66,11 +75,30 @@ export const getSignificantInsights = ({
   const {
     isAiTextGenerationEnabled,
     hasRedisStorage,
+    hasDomain,
   } = APP_CONFIGURATION;
 
   return {
     forkBehind: Boolean(codeMeta?.isBehind),
     noAiRateLimiting: isAiTextGenerationEnabled && !hasRedisStorage,
+    noConfiguredDomain: !hasDomain,
     outdatedPhotos: Boolean(photosCountOutdated),
   };
+};
+
+export const indicatorStatusForSignificantInsights = (
+  insights: Awaited<ReturnType<typeof getSignificantInsights>>,
+) => {
+  const {
+    forkBehind,
+    noAiRateLimiting,
+    noConfiguredDomain,
+    outdatedPhotos,
+  } = insights;
+
+  if (noAiRateLimiting || noConfiguredDomain) {
+    return 'yellow';
+  } else if (forkBehind || outdatedPhotos) {
+    return 'blue';
+  }
 };

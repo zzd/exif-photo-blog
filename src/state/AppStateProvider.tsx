@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, ReactNode, useCallback } from 'react';
+import { useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { AppStateContext } from './AppState';
 import { AnimationConfig } from '@/components/AnimateItems';
 import usePathnames from '@/utility/usePathnames';
@@ -14,24 +14,26 @@ import {
 } from '@/app/config';
 import { ShareModalProps } from '@/share';
 import { storeTimezoneCookie } from '@/utility/timezone';
-import { InsightIndicatorStatus } from '@/admin/insights';
-import { getAdminDataAction } from '@/admin/actions';
+import { AdminData, getAdminDataAction } from '@/admin/actions';
 import {
   storeAuthEmailCookie,
   clearAuthEmailCookie,
   hasAuthEmailCookie,
 } from '@/auth/client';
-import { useRouter } from 'next/navigation';
-import { PATH_SIGN_IN } from '@/app/paths';
+import { useRouter, usePathname } from 'next/navigation';
+import { isPathAdmin, PATH_SIGN_IN } from '@/app/paths';
+import { INITIAL_UPLOAD_STATE, UploadState } from '@/admin/upload';
 
 export default function AppStateProvider({
   children,
 }: {
   children: ReactNode
 }) {
-  const { previousPathname } = usePathnames();
-
   const router = useRouter();
+
+  const pathname = usePathname();
+
+  const { previousPathname } = usePathnames();
 
   // CORE
   const [hasLoaded, setHasLoaded] =
@@ -42,12 +44,16 @@ export default function AppStateProvider({
     useState<AnimationConfig>();
   const [shouldRespondToKeyboardCommands, setShouldRespondToKeyboardCommands] =
     useState(true);
+  // UPLOAD
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const [uploadState, _setUploadState] =
+    useState(INITIAL_UPLOAD_STATE);
   // MODAL
   const [isCommandKOpen, setIsCommandKOpen] =
     useState(false);
   const [shareModalProps, setShareModalProps] =
     useState<ShareModalProps>();
-  // ADMIN
+  // AUTH
   const [userEmail, setUserEmail] =
     useState<string>();
   const [isUserSignedInEager, setIsUserSignedInEager] =
@@ -55,20 +61,10 @@ export default function AppStateProvider({
   // ADMIN
   const [adminUpdateTimes, setAdminUpdateTimes] =
     useState<Date[]>([]);
-  const [photosCount, setPhotosCount] =
-    useState<number>();
-  const [photosCountHidden, setPhotosCountHidden] =
-    useState<number>();
-  const [uploadsCount, setUploadsCount] =
-    useState<number>();
-  const [tagsCount, setTagsCount] =
-    useState<number>();
   const [selectedPhotoIds, setSelectedPhotoIds] =
     useState<string[] | undefined>();
   const [isPerformingSelectEdit, setIsPerformingSelectEdit] =
     useState(false);
-  const [insightIndicatorStatus, setInsightIndicatorStatus] =
-    useState<InsightIndicatorStatus>();
   // DEBUG
   const [isGridHighDensity, setIsGridHighDensity] =
     useState(HIGH_DENSITY_GRID);
@@ -85,6 +81,11 @@ export default function AppStateProvider({
   const [shouldDebugRecipeOverlays, setShouldDebugRecipeOverlays] =
     useState(false);
 
+  useEffect(() => {
+    setHasLoaded?.(true);
+    storeTimezoneCookie();
+  }, []);
+
   const invalidateSwr = useCallback(() => setSwrTimestamp(Date.now()), []);
 
   const { data: auth, error: authError } = useSWR('getAuth', getAuthAction);
@@ -96,49 +97,53 @@ export default function AppStateProvider({
   }, [auth, authError]);
   const isUserSignedIn = Boolean(userEmail);
 
-  const {
-    data: adminData,
-    error: adminError,
-    mutate: refreshAdminData,
-  } = useSWR(
+  const { data: adminData, mutate: refreshAdminData } = useSWR(
     isUserSignedIn ? 'getAdminData' : null,
     getAdminDataAction, {
       refreshInterval: 1000 * 60,
     },
   );
+  const updateAdminData = useCallback(
+    (updatedData: Partial<AdminData>) => {
+      if (adminData) {
+        refreshAdminData({
+          ...adminData,
+          ...updatedData,
+        });
+      }
+    }, [adminData, refreshAdminData]);
 
   useEffect(() => {
     if (userEmail) {
       storeAuthEmailCookie(userEmail);
-      if (adminData) {
-        const timeout = setTimeout(() => {
-          setPhotosCount(adminData.countPhotos);
-          setPhotosCountHidden(adminData.countHiddenPhotos);
-          setUploadsCount(adminData.countUploads);
-          setTagsCount(adminData.countTags);
-          setInsightIndicatorStatus(adminData.shouldShowInsightsIndicator);
-        }, 100);
-        return () => clearTimeout(timeout);
-      }
-    } else {
-      setPhotosCountHidden(0);
     }
-  }, [adminData, adminError, userEmail]);
+  }, [userEmail, refreshAdminData, adminData]);
 
   const registerAdminUpdate = useCallback(() =>
     setAdminUpdateTimes(updates => [...updates, new Date()])
   , []);
 
-  useEffect(() => {
-    setHasLoaded?.(true);
-    storeTimezoneCookie();
-  }, []);
-
-  const clearAuthStateAndRedirect = useCallback((shouldRedirect = true) => {
+  const clearAuthStateAndRedirect = useCallback(() => {
     setUserEmail(undefined);
+    setIsUserSignedInEager(false);
     clearAuthEmailCookie();
-    if (shouldRedirect) { router.push(PATH_SIGN_IN); }
-  }, [router]);
+    if (isPathAdmin(pathname)) { router.push(PATH_SIGN_IN); }
+  }, [router, pathname]);
+
+  const startUpload = useCallback((onStart?: () => void) => {
+    if (uploadInputRef.current) {
+      uploadInputRef.current.value = '';
+      uploadInputRef.current.click();
+      uploadInputRef.current.oninput = onStart ?? null;
+      uploadInputRef.current.oncancel = onStart ?? null;
+    }
+  }, []);
+  const setUploadState = useCallback((uploadState: Partial<UploadState>) => {
+    _setUploadState(prev => ({ ...prev, ...uploadState }));
+  }, []);
+  const resetUploadState = useCallback(() => {
+    _setUploadState(INITIAL_UPLOAD_STATE);
+  }, []);
 
   return (
     <AppStateContext.Provider
@@ -154,6 +159,12 @@ export default function AppStateProvider({
         clearNextPhotoAnimation: () => setNextPhotoAnimation?.(undefined),
         shouldRespondToKeyboardCommands,
         setShouldRespondToKeyboardCommands,
+        // UPLOAD
+        uploadInputRef,
+        startUpload,
+        uploadState,
+        setUploadState,
+        resetUploadState,
         // MODAL
         isCommandKOpen,
         setIsCommandKOpen,
@@ -169,16 +180,12 @@ export default function AppStateProvider({
         adminUpdateTimes,
         registerAdminUpdate,
         refreshAdminData,
-        photosCount,
-        photosCountHidden,
-        uploadsCount,
-        tagsCount,
+        updateAdminData,
+        ...adminData,
         selectedPhotoIds,
         setSelectedPhotoIds,
         isPerformingSelectEdit,
         setIsPerformingSelectEdit,
-        insightIndicatorStatus,
-        setInsightIndicatorStatus,
         // DEBUG
         isGridHighDensity,
         setIsGridHighDensity,

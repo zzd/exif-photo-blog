@@ -11,11 +11,13 @@ import {
   GRID_HOMEPAGE_ENABLED,
   HAS_STATIC_OPTIMIZATION,
   MATTE_PHOTOS,
+  SHOW_SIDEBAR_CAMERAS_FIRST,
 } from '@/app/config';
 import { getGitHubMetaForCurrentApp, getSignificantInsights } from '.';
 import { getOutdatedPhotosCount } from '@/photo/db/query';
 
 const BASIC_PHOTO_INSTALLATION_COUNT = 32;
+const TAG_COUNT_THRESHOLD = 12;
 
 export default async function AdminAppInsights() {
   const [
@@ -45,6 +47,7 @@ export default async function AdminAppInsights() {
   const {
     forkBehind,
     noAiRateLimiting,
+    noConfiguredDomain,
     outdatedPhotos,
   } = getSignificantInsights({
     codeMeta,
@@ -59,8 +62,13 @@ export default async function AdminAppInsights() {
         forkBehind,
         noAi: !isAiTextGenerationEnabled,
         noAiRateLimiting,
+        noConfiguredDomain,
         outdatedPhotos,
         photoMatting: photosCountPortrait > 0 && !MATTE_PHOTOS,
+        camerasFirst: (
+          tags.length > TAG_COUNT_THRESHOLD &&
+          !SHOW_SIDEBAR_CAMERAS_FIRST
+        ),
         gridFirst: (
           photosCount >= BASIC_PHOTO_INSTALLATION_COUNT &&
           !GRID_HOMEPAGE_ENABLED

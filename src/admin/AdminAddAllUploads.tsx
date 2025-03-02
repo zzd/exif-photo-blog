@@ -19,6 +19,8 @@ import { BiCheckCircle, BiImageAdd } from 'react-icons/bi';
 import ProgressButton from '@/components/primitives/ProgressButton';
 import { UrlAddStatus } from './AdminUploadsClient';
 import PhotoTagFieldset from './PhotoTagFieldset';
+import DeleteUploadButton from './DeleteUploadButton';
+import { useAppState } from '@/state/AppState';
 
 const UPLOAD_BATCH_SIZE = 4;
 
@@ -35,6 +37,8 @@ export default function AdminAddAllUploads({
   setIsAdding: (isAdding: boolean) => void
   setUrlAddStatuses: Dispatch<SetStateAction<UrlAddStatus[]>>
 }) {
+  const { updateAdminData } = useAppState();
+
   const [buttonText, setButtonText] = useState('Add All Uploads');
   const [showTags, setShowTags] = useState(false);
   const [tags, setTags] = useState('');
@@ -140,7 +144,10 @@ export default function AdminAddAllUploads({
               disabled={Boolean(tagErrorMessage) || isAddingComplete}
               icon={isAddingComplete
                 ? <BiCheckCircle size={18} className="translate-x-[1px]" />
-                : <BiImageAdd size={18} className="translate-x-[1px]" />
+                : <BiImageAdd
+                  size={18}
+                  className="translate-x-[1px] translate-y-[2px]"
+                />
               }
               onClick={async () => {
                 // eslint-disable-next-line max-len
@@ -178,6 +185,18 @@ export default function AdminAddAllUploads({
             >
               {buttonText}
             </ProgressButton>
+            <DeleteUploadButton
+              urls={storageUrls}
+              onDelete={() => {
+                updateAdminData?.({ uploadsCount: 0 });
+                router.push(PATH_ADMIN_PHOTOS);
+              }}
+              className="w-full flex justify-center"
+              shouldRedirectToAdminPhotos
+              hideTextOnMobile={false}
+            >
+              Delete All Uploads
+            </DeleteUploadButton>
           </div>
         </div>
       </Container>

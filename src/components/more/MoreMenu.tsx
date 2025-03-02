@@ -16,6 +16,7 @@ export default function MoreMenu({
   header,
   className,
   buttonClassName,
+  buttonClassNameOpen,
   ariaLabel,
   align = 'end',
   onOpen,
@@ -26,6 +27,7 @@ export default function MoreMenu({
   header?: ReactNode
   className?: string
   buttonClassName?: string
+  buttonClassNameOpen?: string
   ariaLabel: string
   onOpen?: () => void
 } & ComponentProps<typeof DropdownMenu.Content>){
@@ -44,11 +46,12 @@ export default function MoreMenu({
       <DropdownMenu.Trigger asChild>
         <button
           className={clsx(
-            'p-1 min-h-0 border-none shadow-none hover:outline-hidden',
+            'p-0 min-h-0 border-none shadow-none hover:outline-hidden',
             'hover:bg-gray-100 active:bg-gray-100',
             'dark:hover:bg-gray-800/75 dark:active:bg-gray-900',
             'text-dim',
             buttonClassName,
+            isOpen && buttonClassNameOpen,
           )}
           aria-label={ariaLabel}
         >
@@ -74,7 +77,7 @@ export default function MoreMenu({
         >
           {header && <div className={clsx(
             'px-2 pt-3 pb-2 text-dim uppercase',
-            'text-sm',
+            'text-sm tracking-wide',
           )}>
             {header}
           </div>}

@@ -1,8 +1,11 @@
 import { getOutdatedPhotosCount } from '@/photo/db/query';
-import { getSignificantInsights } from '.';
+import {
+  getSignificantInsights,
+  indicatorStatusForSignificantInsights,
+} from '.';
 import { getGitHubMetaForCurrentApp } from '.';
 
-export const getShouldShowInsightsIndicator = async () => {
+export const getInsightsIndicatorStatus = async () => {
   const [
     codeMeta,
     photosCountOutdated,
@@ -11,18 +14,10 @@ export const getShouldShowInsightsIndicator = async () => {
     getOutdatedPhotosCount(),
   ]);
   
-  const {
-    forkBehind,
-    noAiRateLimiting,
-    outdatedPhotos,
-  } = getSignificantInsights({
+  const significantInsights = getSignificantInsights({
     codeMeta,
     photosCountOutdated,
   });
 
-  if (noAiRateLimiting || outdatedPhotos) {
-    return 'yellow';
-  } else if (forkBehind) {
-    return 'blue';
-  }
+  return indicatorStatusForSignificantInsights(significantInsights);
 };

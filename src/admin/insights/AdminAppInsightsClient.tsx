@@ -7,6 +7,7 @@ import PhotoFilmSimulationIcon from '@/simulation/PhotoFilmSimulationIcon';
 import { FaCamera } from 'react-icons/fa';
 import { FaTag } from 'react-icons/fa';
 import { FaCircleInfo, FaRegCalendar } from 'react-icons/fa6';
+import { HiMiniArrowsUpDown } from 'react-icons/hi2';
 import { HiOutlinePhotograph } from 'react-icons/hi';
 import { MdAspectRatio } from 'react-icons/md';
 import { PiWarningBold } from 'react-icons/pi';
@@ -46,7 +47,8 @@ const DEBUG_COMMIT_MESSAGE = 'Long commit message for debugging purposes';
 const DEBUG_BEHIND_BY = 9;
 const DEBUG_PHOTOS_COUNT_OUTDATED = 7;
 
-const WARNING_TEXT_COLOR = 'text-amber-600 dark:text-amber-500';
+const TEXT_COLOR_WARNING  = 'text-amber-600 dark:text-amber-500';
+const TEXT_COLOR_BLUE     = 'text-blue-600 dark:text-blue-500';
 
 const readmeAnchor = (anchor: string) =>
   <AdminLink href={`${TEMPLATE_REPO_URL_README}#${anchor}`}>
@@ -103,8 +105,10 @@ export default function AdminAppInsightsClient({
     forkBehind,
     noAi,
     noAiRateLimiting,
+    noConfiguredDomain,
     outdatedPhotos,
     photoMatting,
+    camerasFirst,
     gridFirst,
     noStaticOptimization,
   } = insights;
@@ -127,7 +131,7 @@ export default function AdminAppInsightsClient({
             <ScoreCardRow
               icon={<IoSyncCircle
                 size={18}
-                className={WARNING_TEXT_COLOR}
+                className={TEXT_COLOR_WARNING}
               />}
               content={<>
                 Could not analyze source code
@@ -238,7 +242,7 @@ export default function AdminAppInsightsClient({
                 size={17}
                 className={clsx(
                   'translate-x-[0.5px]',
-                  WARNING_TEXT_COLOR,
+                  TEXT_COLOR_WARNING,
                 )}
               />}
               content={isExpanded => renderHighlightText(
@@ -250,6 +254,29 @@ export default function AdminAppInsightsClient({
                 Create Upstash Redis store from storage tab on
                 Vercel dashboard and link to this project to
                 prevent abuse by enabling rate limiting.
+              </>}
+            />}
+            {(noConfiguredDomain || debug) && <ScoreCardRow
+              icon={<PiWarningBold
+                size={17}
+                className={clsx(
+                  'translate-x-[0.5px]',
+                  TEXT_COLOR_WARNING,
+                )}
+              />}
+              content={isExpanded => renderHighlightText(
+                'Configure domain',
+                'yellow',
+                !isExpanded,
+              )}
+              expandContent={<>
+                Not explicitly setting a domain may cause certain features
+                to behave unexpectedly. Domains are stored in
+                {' '}
+                <EnvVar
+                  variable="NEXT_PUBLIC_SITE_DOMAIN"
+                  trailingContent="."
+                />
               </>}
             />}
             {(noStaticOptimization || debug) && <ScoreCardRow
@@ -291,7 +318,10 @@ export default function AdminAppInsightsClient({
               expandContent={<>
                 Enable automatic AI text generation
                 {' '}
-                by setting <EnvVar variable="OPENAI_SECRET_KEY" />.
+                by setting <EnvVar
+                  variable="OPENAI_SECRET_KEY"
+                  trailingContent="."
+                />
                 {' '}
                 Further instruction and cost considerations in
                 {' '}
@@ -309,7 +339,28 @@ export default function AdminAppInsightsClient({
                 {' '}
                 portrait and landscape photos appear more consistent
                 {' '}
-                <EnvVar variable="NEXT_PUBLIC_MATTE_PHOTOS" value="1" />.
+                <EnvVar
+                  variable="NEXT_PUBLIC_MATTE_PHOTOS"
+                  value="1"
+                  trailingContent="."
+                />
+              </>}
+            />}
+            {(camerasFirst || debug) && <ScoreCardRow
+              icon={<HiMiniArrowsUpDown
+                size={17}
+                className="translate-x-[-1px]"
+              />}
+              content="Move cameras above tags in sidebar"
+              expandContent={<>
+                Now that you have more than a few tags, consider
+                showing cameras first in the sidebar by setting
+                {' '}
+                <EnvVar
+                  variable="SHOW_SIDEBAR_CAMERAS_FIRST"
+                  value="1"
+                  trailingContent="."
+                />
               </>}
             />}
             {(gridFirst || debug) && <ScoreCardRow
@@ -338,7 +389,7 @@ export default function AdminAppInsightsClient({
             size={19}
             className={clsx(
               'translate-y-[-2px]',
-              WARNING_TEXT_COLOR,
+              TEXT_COLOR_BLUE,
             )}
           />}
           content={renderHighlightText(
@@ -346,7 +397,7 @@ export default function AdminAppInsightsClient({
               photosCountOutdated || DEBUG_PHOTOS_COUNT_OUTDATED,
               'outdated photo',
             ),
-            'yellow',
+            'blue',
           )}
           expandPath={PATH_ADMIN_OUTDATED}
         />}
