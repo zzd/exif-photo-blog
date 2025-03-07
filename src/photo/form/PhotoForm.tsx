@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import {
+  FIELDS_WITH_JSON,
   FORM_METADATA_ENTRIES,
   PhotoFormData,
   convertFormKeysToLabels,
@@ -30,6 +31,8 @@ import { getNextImageUrlForManipulation } from '@/platforms/next-image';
 import { BLUR_ENABLED, IS_PREVIEW } from '@/app/config';
 import { PhotoDbInsert } from '..';
 import ErrorNote from '@/components/ErrorNote';
+import { convertRecipesForForm, Recipes } from '@/recipe';
+import deepEqual from 'fast-deep-equal/es6/react';
 
 const THUMBNAIL_SIZE = 300;
 
@@ -39,6 +42,7 @@ export default function PhotoForm({
   updatedExifData,
   updatedBlurData,
   uniqueTags,
+  uniqueRecipes,
   aiContent,
   shouldStripGpsData,
   onTitleChange,
@@ -50,6 +54,7 @@ export default function PhotoForm({
   updatedExifData?: Partial<PhotoFormData>
   updatedBlurData?: string
   uniqueTags?: Tags
+  uniqueRecipes?: Recipes
   aiContent?: AiContent
   shouldStripGpsData?: boolean
   onTitleChange?: (updatedTitle: string) => void
@@ -86,9 +91,16 @@ export default function PhotoForm({
       const changedKeys: (keyof PhotoFormData)[] = [];
 
       setFormData(currentForm => {
-        Object.entries(updatedExifData ?? {})
+        (Object.entries(updatedExifData ?? {}) as
+          [keyof PhotoFormData, string][])
           .forEach(([key, value]) => {
-            if (currentForm[key as keyof PhotoFormData] !== value) {
+            let a = currentForm[key];
+            let b = value;
+            if (FIELDS_WITH_JSON.includes(key)) {
+              a = JSON.parse(a ?? '');
+              b = JSON.parse(b ?? '');
+            }
+            if (!deepEqual(a, b)) {
               changedKeys.push(key as keyof PhotoFormData);
             }
           });
@@ -293,6 +305,7 @@ export default function PhotoForm({
         <div className="space-y-6">
           {FORM_METADATA_ENTRIES(
             convertTagsForForm(uniqueTags),
+            convertRecipesForForm(uniqueRecipes),
             aiContent !== undefined,
           )
             .map(([key, {
@@ -302,6 +315,8 @@ export default function PhotoForm({
               selectOptions,
               selectOptionsDefaultLabel,
               tagOptions,
+              tagOptionsLimit,
+              tagOptionsLimitValidationMessage,
               readOnly,
               validate,
               validateStringMaxLength,
@@ -345,6 +360,9 @@ export default function PhotoForm({
                   selectOptions={selectOptions}
                   selectOptionsDefaultLabel={selectOptionsDefaultLabel}
                   tagOptions={tagOptions}
+                  tagOptionsLimit={tagOptionsLimit}
+                  // eslint-disable-next-line max-len
+                  tagOptionsLimitValidationMessage={tagOptionsLimitValidationMessage}
                   required={required}
                   readOnly={readOnly}
                   spellCheck={spellCheck}

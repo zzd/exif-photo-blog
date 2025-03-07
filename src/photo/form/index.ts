@@ -60,7 +60,10 @@ type FormMeta = {
   selectOptions?: { value: string, label: string }[]
   selectOptionsDefaultLabel?: string
   tagOptions?: AnnotatedTag[]
+  tagOptionsLimit?: number
+  tagOptionsLimitValidationMessage?: string
   shouldNotOverwriteWithNullDataOnSync?: boolean
+  isJson?: boolean
 };
 
 const STRING_MAX_LENGTH_SHORT = 255;
@@ -68,6 +71,7 @@ const STRING_MAX_LENGTH_LONG  = 1000;
 
 const FORM_METADATA = (
   tagOptions?: AnnotatedTag[],
+  recipeOptions?: AnnotatedTag[],
   aiTextGeneration?: boolean,
 ): Record<keyof PhotoFormData, FormMeta> => ({
   title: {
@@ -113,6 +117,9 @@ const FORM_METADATA = (
   },
   recipeTitle: {
     label: 'recipe title',
+    tagOptions: recipeOptions,
+    tagOptionsLimit: 1,
+    tagOptionsLimitValidationMessage: 'Photos can only have one recipe',
     spellCheck: false,
     capitalize: false,
     shouldHide: ({ make }) => make !== MAKE_FUJIFILM,
@@ -124,6 +131,7 @@ const FORM_METADATA = (
     capitalize: false,
     shouldHide: ({ make }) => make !== MAKE_FUJIFILM,
     shouldNotOverwriteWithNullDataOnSync: true,
+    isJson: true,
     validate: value => {
       let validationMessage = undefined;
       if (value) {
@@ -159,6 +167,10 @@ const FORM_METADATA = (
   favorite: { label: 'favorite', type: 'checkbox', excludeFromInsert: true },
   hidden: { label: 'hidden', type: 'checkbox' },
 });
+
+export const FIELDS_WITH_JSON = Object.entries(FORM_METADATA())
+  .filter(([_, meta]) => meta.isJson)
+  .map(([key]) => key as keyof PhotoFormData);
 
 export const FIELDS_TO_NOT_OVERWRITE_WITH_NULL_DATA_ON_SYNC =
   Object.entries(FORM_METADATA())
