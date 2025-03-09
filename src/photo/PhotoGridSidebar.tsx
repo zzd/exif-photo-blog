@@ -15,7 +15,7 @@ import FavsTag from '../tag/FavsTag';
 import { useAppState } from '@/state/AppState';
 import { useMemo } from 'react';
 import HiddenTag from '@/tag/HiddenTag';
-import { SHOW_SIDEBAR_CAMERAS_FIRST, SITE_ABOUT } from '@/app/config';
+import { CATEGORY_VISIBILITY, SITE_ABOUT } from '@/app/config';
 import {
   htmlHasBrParagraphBreaks,
   safelyParseFormattedHtml,
@@ -50,6 +50,7 @@ export default function PhotoGridSidebar({
 
   const tagsContent = tags.length > 0
     ? <HeaderList
+      key="tags"
       title='Tags'
       icon={<FaTag
         size={12}
@@ -92,6 +93,7 @@ export default function PhotoGridSidebar({
 
   const camerasContent = cameras.length > 0
     ? <HeaderList
+      key="cameras"
       title="Cameras"
       icon={<IoMdCamera
         size={13}
@@ -115,6 +117,7 @@ export default function PhotoGridSidebar({
 
   const recipesContent = recipes.length > 0
     ? <HeaderList
+      key="recipes"
       title="Recipes"
       icon={<TbChecklist
         size={16}
@@ -136,6 +139,7 @@ export default function PhotoGridSidebar({
 
   const filmsContent = simulations.length > 0
     ? <HeaderList
+      key="films"
       title="Films"
       icon={<PhotoFilmSimulationIcon
         className="translate-y-[0.5px]"
@@ -160,12 +164,14 @@ export default function PhotoGridSidebar({
   const photoStatsContent = photosCount > 0
     ? start
       ? <HeaderList
+        key="photo-stats"
         title={photoQuantityText(photosCount, false)}
         items={start === end
           ? [start]
           : [`${end} –`, start]}
       />
       : <HeaderList
+        key="photo-stats"
         items={[photoQuantityText(photosCount, false)]}
       />
     : null;
@@ -184,11 +190,14 @@ export default function PhotoGridSidebar({
           }}
         />]}
       />}
-      {SHOW_SIDEBAR_CAMERAS_FIRST
-        ? <>{camerasContent}{tagsContent}</>
-        : <>{tagsContent}{camerasContent}</>}
-      {recipesContent}
-      {filmsContent}
+      {CATEGORY_VISIBILITY.map(category => {
+        switch (category) {
+        case 'cameras': return camerasContent;
+        case 'tags': return tagsContent;
+        case 'recipes': return recipesContent;
+        case 'films': return filmsContent;
+        }
+      })}
       {photoStatsContent}
     </div>
   );

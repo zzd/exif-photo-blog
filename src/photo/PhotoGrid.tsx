@@ -1,13 +1,14 @@
 'use client';
 
-import { Photo, PhotoSetCategory } from '.';
+import { Photo } from '.';
+import { PhotoSetCategory } from './set';
 import PhotoMedium from './PhotoMedium';
 import { clsx } from 'clsx/lite';
 import AnimateItems from '@/components/AnimateItems';
 import { GRID_ASPECT_RATIO } from '@/app/config';
 import { useAppState } from '@/state/AppState';
 import SelectTileOverlay from '@/components/SelectTileOverlay';
-import { JSX } from 'react';
+import { ReactNode } from 'react';
 
 export default function PhotoGrid({
   photos,
@@ -37,7 +38,7 @@ export default function PhotoGrid({
   canStart?: boolean
   animateOnFirstLoadOnly?: boolean
   staggerOnFirstLoadOnly?: boolean
-  additionalTile?: JSX.Element
+  additionalTile?: ReactNode
   small?: boolean
   canSelect?: boolean
   onLastPhotoVisible?: () => void
@@ -112,7 +113,7 @@ export default function PhotoGrid({
               )}
             />}
         </div>;
-      }).concat(additionalTile ?? [])}
+      }).concat(additionalTile ? <>{additionalTile}</> : [])}
       itemKeys={photos.map(photo => photo.id)
         .concat(additionalTile ? ['more'] : [])}
     />
