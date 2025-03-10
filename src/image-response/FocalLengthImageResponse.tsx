@@ -20,11 +20,7 @@ export default function FocalLengthImageResponse({
   fontFamily: string
 }) {  
   return (
-    <ImageContainer {...{
-      width,
-      height,
-      ...photos.length === 0 && { background: 'black' },
-    }}>
+    <ImageContainer solidBackground={photos.length === 0}>
       <ImagePhotoGrid
         {...{
           photos,
@@ -43,9 +39,8 @@ export default function FocalLengthImageResponse({
             marginRight: height * .01,
           }}
         />,
-      }}>
-        {formatFocalLength(focal)}
-      </ImageCaption>
+        title: formatFocalLength(focal),
+      }} />
     </ImageContainer>
   );
 }

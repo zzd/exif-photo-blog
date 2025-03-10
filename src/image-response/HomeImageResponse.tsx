@@ -17,7 +17,7 @@ export default function HomeImageResponse({
   fontFamily: string
 }) {
   return (
-    <ImageContainer {...{ width, height }} >
+    <ImageContainer>
       <ImagePhotoGrid
         {...{
           photos,
@@ -25,9 +25,12 @@ export default function HomeImageResponse({
           height,
         }}
       />
-      <ImageCaption {...{ width, height, fontFamily }}>
-        {SITE_DOMAIN_OR_TITLE}
-      </ImageCaption>
+      <ImageCaption {...{
+        width,
+        height,
+        fontFamily,
+        title: SITE_DOMAIN_OR_TITLE,
+      }} />
     </ImageContainer>
   );
 }

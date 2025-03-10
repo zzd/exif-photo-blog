@@ -24,11 +24,7 @@ export default function FilmSimulationImageResponse({
   fontFamily: string
 }) {  
   return (
-    <ImageContainer {...{
-      width,
-      height,
-      ...photos.length === 0 && { background: 'black' },
-    }}>
+    <ImageContainer solidBackground={photos.length === 0}>
       <ImagePhotoGrid
         {...{
           photos,
@@ -45,9 +41,8 @@ export default function FilmSimulationImageResponse({
           height={height * .081}
           style={{ transform: `translateY(${height * .001}px)`}}
         />,
-      }}>
-        {labelForFilmSimulation(simulation).medium.toLocaleUpperCase()}
-      </ImageCaption>
+        title: labelForFilmSimulation(simulation).medium.toLocaleUpperCase(),
+      }} />
     </ImageContainer>
   );
 }

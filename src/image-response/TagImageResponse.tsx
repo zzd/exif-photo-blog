@@ -20,11 +20,7 @@ export default function TagImageResponse({
   fontFamily: string
 }) {  
   return (
-    <ImageContainer {...{
-      width,
-      height,
-      ...photos.length === 0 && { background: 'black' },
-    }}>
+    <ImageContainer solidBackground={photos.length === 0}>
       <ImagePhotoGrid
         {...{
           photos,
@@ -52,9 +48,8 @@ export default function TagImageResponse({
               marginRight: height * .02,
             }}
           />,
-      }}>
-        {formatTag(tag).toLocaleUpperCase()}
-      </ImageCaption>
+        title: formatTag(tag).toLocaleUpperCase(),
+      }} />
     </ImageContainer>
   );
 }
