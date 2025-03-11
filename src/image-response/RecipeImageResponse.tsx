@@ -6,7 +6,8 @@ import type { NextImageSize } from '@/platforms/next-image';
 import { formatTag } from '@/tag';
 import { TbChecklist } from 'react-icons/tb';
 import { generateRecipeText, getPhotoWithRecipeFromPhotos } from '@/recipe';
-
+import PhotoFilmSimulationIcon from '@/simulation/PhotoFilmSimulationIcon';
+import { isStringFilmSimulation } from '@/platforms/fujifilm/simulation';
 const MAX_RECIPE_LINES = 8;
 
 export default function RecipeImageResponse({
@@ -15,12 +16,14 @@ export default function RecipeImageResponse({
   width,
   height,
   fontFamily,
+  smallText = true,
 }: {
   recipe: string,
   photos: Photo[]
   width: NextImageSize
   height: number
   fontFamily: string
+  smallText?: boolean
 }) {
   const photo = getPhotoWithRecipeFromPhotos(photos);
 
@@ -51,7 +54,7 @@ export default function RecipeImageResponse({
         tw="flex absolute inset-0"
         style={{
           background:
-            'linear-gradient(to right, rgba(0, 0, 0, .5) 40%, transparent 75%)',
+            'linear-gradient(to right, rgba(0, 0, 0, .5) 30%, transparent 60%)',
         }}
       />
       <ImageCaption {...{
@@ -71,12 +74,19 @@ export default function RecipeImageResponse({
       }}>
         {photo?.recipeData &&
           <div
-            tw="opacity-60"
+            // tw="opacity-70"
             style={{
               display: 'flex',
               flexDirection: 'column',
-              paddingTop: height * .03,
-              lineHeight: 1.22,
+              ...smallText ? {
+                paddingTop: height * .04,
+                lineHeight: 1.45,
+                letterSpacing: '0.04em',
+                fontSize: height * .06,
+              } : {
+                paddingTop: height * .02,
+                opacity: 0.7,
+              },              
             }}
           >
             {recipeLines.map(text => (
@@ -84,10 +94,13 @@ export default function RecipeImageResponse({
                 <div
                   tw="flex"
                   style={{
-                    width: height * .141,
+                    width: height * .143,
                   }}
                 />
                 <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: height * .0325,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -95,6 +108,14 @@ export default function RecipeImageResponse({
                   flexGrow: 1,
                 }}>
                   {text}
+                  {isStringFilmSimulation(text) &&
+                    <div tw="flex">
+                      <PhotoFilmSimulationIcon
+                        simulation={photo.filmSimulation}
+                        height={height * .06}
+                        style={{ transform: `translateY(${-height * .001}px)`}}
+                      />
+                    </div>}
                 </div>
               </div>
             ))}

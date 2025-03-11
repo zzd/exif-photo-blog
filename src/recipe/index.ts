@@ -59,32 +59,27 @@ export const generateRecipeText = ({
   simulation,
 }: RecipeProps) => {
   const lines = [
-    `${labelForFilmSimulation(simulation).large.toLocaleUpperCase()}`,
-    `DR${recipe.dynamicRange.development} NR${formatNoiseReduction(recipe)}`,
+    `${labelForFilmSimulation(simulation).small.toLocaleUpperCase()}`,
     // eslint-disable-next-line max-len
     `${formatWhiteBalance(recipe).toLocaleUpperCase()} ${formatWhiteBalanceColor(recipe)}`,
+    `DR${recipe.dynamicRange.development} NR${formatNoiseReduction(recipe)}`,
   ];
 
   if (recipe.highlight || recipe.shadow) {
     // eslint-disable-next-line max-len
-    lines.push(`HIGH/SHAD ${addSign(recipe.highlight)}/${addSign(recipe.shadow)}`);
+    lines.push(`HIGH${addSign(recipe.highlight)} SHADOW${addSign(recipe.shadow)}`);
   }
-
   // eslint-disable-next-line max-len
   lines.push(`COL${addSign(recipe.color)} SHARP${addSign(recipe.sharpness)} CLAR${addSign(recipe.clarity)}`);
-
   if (recipe.colorChromeEffect) {
     lines.push(`CHROME ${recipe.colorChromeEffect.toLocaleUpperCase()}`);
   }
-
   if (recipe.colorChromeFXBlue) {
     lines.push(`FX BLUE ${recipe.colorChromeFXBlue.toLocaleUpperCase()}`);
   }
-
   if (recipe.grainEffect.roughness !== 'off') {
     lines.push(`GRAIN ${formatGrain(recipe)}`);
   }
-
   if (recipe.bwAdjustment || recipe.bwMagentaGreen) {
     // eslint-disable-next-line max-len
     lines.push(`BW ADJ ${addSign(recipe.bwAdjustment)} BW M/G ${addSign(recipe.bwMagentaGreen)}`);
@@ -141,15 +136,15 @@ export const formatWhiteBalanceColor = ({
   whiteBalance: { red, blue },
 }: FujifilmRecipe) =>
   (red || blue)
-    ? `(R${addSign(red)}/B${addSign(blue)})`
+    ? `R${addSign(red)}/B${addSign(blue)}`
     : '';
 
 export const formatGrain = ({ grainEffect }: FujifilmRecipe) =>
   grainEffect.roughness === 'off'
     ? 'OFF'
     : grainEffect.roughness === 'weak'
-      ? `WEAK/${grainEffect.size.toLocaleUpperCase()}`
-      : `STRONG/${grainEffect.size.toLocaleUpperCase()}`;
+      ? `WEAK/${grainEffect.size === 'small' ? 'SM' : 'LG'}`
+      : `STRONG/${grainEffect.size === 'small' ? 'SM' : 'LG'}`;
 
 export const formatNoiseReduction = ({
   highISONoiseReduction,
