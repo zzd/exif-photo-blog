@@ -25,16 +25,22 @@ import { TAG_FAVS, getValidationMessageForTags } from '@/tag';
 import { MAKE_FUJIFILM } from '@/platforms/fujifilm';
 import { FujifilmRecipe } from '@/platforms/fujifilm/recipe';
 
-type VirtualFields = 'favorite';
+type VirtualFields =
+  'favorite' |
+  'applyRecipeTitleGlobally' |
+  'shouldStripGpsData';
 
-export type PhotoFormData = Record<keyof PhotoDbInsert | VirtualFields, string>
+export type FormFields = keyof PhotoDbInsert | VirtualFields;
+
+export type PhotoFormData = Record<FormFields, string>
 
 export type FieldSetType =
   'text' |
   'email' |
   'password' |
   'checkbox' |
-  'textarea';
+  'textarea' |
+  'hidden';
 
 export type AnnotatedTag = {
   value: string,
@@ -42,19 +48,22 @@ export type AnnotatedTag = {
   annotationAria?: string,
 };
 
-type FormMeta = {
+export type FormMeta = {
   label: string
   note?: string
   required?: boolean
   excludeFromInsert?: boolean
   readOnly?: boolean
+  hideModificationStatus?: boolean
   validate?: (value?: string) => string | undefined
   validateStringMaxLength?: number
   spellCheck?: boolean
   capitalize?: boolean
-  hide?: boolean
   hideIfEmpty?: boolean
-  shouldHide?: (formData: Partial<PhotoFormData>) => boolean
+  shouldHide?: (
+    formData: Partial<PhotoFormData>,
+    changedFormKeys?: (keyof PhotoFormData)[],
+  ) => boolean
   loadingMessage?: string
   type?: FieldSetType
   selectOptions?: { value: string, label: string }[]
@@ -64,6 +73,7 @@ type FormMeta = {
   tagOptionsLimitValidationMessage?: string
   shouldNotOverwriteWithNullDataOnSync?: boolean
   isJson?: boolean
+  staticValue?: string
 };
 
 const STRING_MAX_LENGTH_SHORT = 255;
@@ -73,6 +83,7 @@ const FORM_METADATA = (
   tagOptions?: AnnotatedTag[],
   recipeOptions?: AnnotatedTag[],
   aiTextGeneration?: boolean,
+  shouldStripGpsData?: boolean,
 ): Record<keyof PhotoFormData, FormMeta> => ({
   title: {
     label: 'title',
@@ -96,7 +107,7 @@ const FORM_METADATA = (
     label: 'semantic description (not visible)',
     capitalize: true,
     validateStringMaxLength: STRING_MAX_LENGTH_LONG,
-    hide: !aiTextGeneration,
+    shouldHide: () => !aiTextGeneration,
   },
   id: { label: 'id', readOnly: true, hideIfEmpty: true },
   blurData: {
@@ -123,6 +134,19 @@ const FORM_METADATA = (
     spellCheck: false,
     capitalize: false,
     shouldHide: ({ make }) => make !== MAKE_FUJIFILM,
+  },
+  applyRecipeTitleGlobally: {
+    label: 'apply recipe title globally',
+    type: 'checkbox',
+    excludeFromInsert: true,
+    hideModificationStatus: true,
+    shouldHide: ({ make, recipeTitle, recipeData }, changedFormKeys) =>
+      !(
+        make === MAKE_FUJIFILM &&
+        recipeData &&
+        recipeTitle &&
+        changedFormKeys?.includes('recipeTitle')
+      ),
   },
   recipeData: {
     type: 'textarea',
@@ -152,7 +176,7 @@ const FORM_METADATA = (
   iso: { label: 'ISO' },
   exposureTime: { label: 'exposure time' },
   exposureCompensation: { label: 'exposure compensation' },
-  locationName: { label: 'location name', hide: true },
+  locationName: { label: 'location name', shouldHide: () => true },
   latitude: { label: 'latitude' },
   longitude: { label: 'longitude' },
   takenAt: {
@@ -166,6 +190,12 @@ const FORM_METADATA = (
   priorityOrder: { label: 'priority order' },
   favorite: { label: 'favorite', type: 'checkbox', excludeFromInsert: true },
   hidden: { label: 'hidden', type: 'checkbox' },
+  shouldStripGpsData: {
+    label: 'strip gps data',
+    type: 'hidden',
+    excludeFromInsert: true,
+    staticValue: shouldStripGpsData ? 'true' : 'false',
+  },
 });
 
 export const FIELDS_WITH_JSON = Object.entries(FORM_METADATA())
@@ -180,8 +210,7 @@ export const FIELDS_TO_NOT_OVERWRITE_WITH_NULL_DATA_ON_SYNC =
 export const FORM_METADATA_ENTRIES = (
   ...args: Parameters<typeof FORM_METADATA>
 ) =>
-  (Object.entries(FORM_METADATA(...args)) as [keyof PhotoFormData, FormMeta][])
-    .filter(([_, meta]) => !meta.hide);
+  (Object.entries(FORM_METADATA(...args)) as [keyof PhotoFormData, FormMeta][]);
 
 export const convertFormKeysToLabels = (keys: (keyof PhotoFormData)[]) =>
   keys.map(key => FORM_METADATA()[key].label.toUpperCase());

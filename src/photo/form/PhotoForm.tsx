@@ -1,9 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import {
+  ComponentProps,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   FIELDS_WITH_JSON,
   FORM_METADATA_ENTRIES,
+  FormFields,
+  FormMeta,
   PhotoFormData,
   convertFormKeysToLabels,
   formHasTextContent,
@@ -29,10 +37,11 @@ import { useAppState } from '@/state/AppState';
 import UpdateBlurDataButton from '../UpdateBlurDataButton';
 import { getNextImageUrlForManipulation } from '@/platforms/next-image';
 import { BLUR_ENABLED, IS_PREVIEW } from '@/app/config';
-import { PhotoDbInsert } from '..';
 import ErrorNote from '@/components/ErrorNote';
 import { convertRecipesForForm, Recipes } from '@/recipe';
 import deepEqual from 'fast-deep-equal/es6/react';
+import ApplyRecipeTitleGloballyCheckbox from './ApplyRecipesGloballyCheckbox';
+import { FilmSimulation } from '@/simulation';
 
 const THUMBNAIL_SIZE = 300;
 
@@ -223,9 +232,9 @@ export default function PhotoForm({
   };
 
   const shouldHideField = (
-    key: keyof PhotoDbInsert | 'favorite',
+    key: FormFields,
     hideIfEmpty?: boolean,
-    shouldHide?: (formData: Partial<PhotoFormData>) => boolean,
+    shouldHide?: FormMeta['shouldHide'],
   ) => {
     if (
       key === 'blurData' &&
@@ -237,11 +246,20 @@ export default function PhotoForm({
     } else {
       return (
         (hideIfEmpty && !formData[key]) ||
-        shouldHide?.(formData)
+        shouldHide?.(formData, changedFormKeys)
       );
     }
   };
-    
+
+  const onMatchResults = useCallback((didFindMatchingPhotos: boolean) => {
+    setFormData(data => ({
+      ...data,
+      applyRecipeTitleGlobally: didFindMatchingPhotos
+        ? 'true'
+        : 'false',
+    }));
+  }, []);
+
   return (
     <div className="space-y-8 max-w-[38rem] relative">
       <div className="flex gap-2">
@@ -307,6 +325,7 @@ export default function PhotoForm({
             convertTagsForForm(uniqueTags),
             convertRecipesForForm(uniqueRecipes),
             aiContent !== undefined,
+            shouldStripGpsData,
           )
             .map(([key, {
               label,
@@ -318,6 +337,7 @@ export default function PhotoForm({
               tagOptionsLimit,
               tagOptionsLimitValidationMessage,
               readOnly,
+              hideModificationStatus,
               validate,
               validateStringMaxLength,
               spellCheck,
@@ -326,25 +346,31 @@ export default function PhotoForm({
               shouldHide,
               loadingMessage,
               type,
-            }]) =>
-              !shouldHideField(key, hideIfEmpty, shouldHide) &&
-                <FieldSetWithStatus
-                  key={key}
-                  id={key}
-                  label={label + (
+              staticValue,
+            }]) => {
+              if (!shouldHideField(key, hideIfEmpty, shouldHide)) {
+                const fieldProps: ComponentProps<typeof FieldSetWithStatus> = {
+                  id: key,
+                  label: label + (
                     key === 'blurData' && shouldDebugImageFallbacks
                       ? ` (${(formData[key] ?? '').length} chars.)`
                       : ''
-                  )}
-                  note={note}
-                  error={formErrors[key]}
-                  value={formData[key] ?? ''}
-                  isModified={changedFormKeys.includes(key)}
-                  onChange={value => {
+                  ),
+                  note,
+                  error: formErrors[key],
+                  value: staticValue ?? formData[key] ?? '',
+                  isModified: (
+                    !hideModificationStatus &&
+                    changedFormKeys.includes(key)
+                  ),
+                  onChange: value => {
                     const formUpdated = { ...formData, [key]: value };
                     setFormData(formUpdated);
                     if (validate) {
-                      setFormErrors({ ...formErrors, [key]: validate(value) });
+                      setFormErrors({
+                        ...formErrors, [key]:
+                        validate(value),
+                      });
                     } else if (validateStringMaxLength !== undefined) {
                       setFormErrors({
                         ...formErrors,
@@ -356,32 +382,48 @@ export default function PhotoForm({
                     if (key === 'title') {
                       onTitleChange?.(value.trim());
                     }
-                  }}
-                  selectOptions={selectOptions}
-                  selectOptionsDefaultLabel={selectOptionsDefaultLabel}
-                  tagOptions={tagOptions}
-                  tagOptionsLimit={tagOptionsLimit}
-                  // eslint-disable-next-line max-len
-                  tagOptionsLimitValidationMessage={tagOptionsLimitValidationMessage}
-                  required={required}
-                  readOnly={readOnly}
-                  spellCheck={spellCheck}
-                  capitalize={capitalize}
-                  placeholder={loadingMessage && !formData[key]
+                  },
+                  selectOptions,
+                  selectOptionsDefaultLabel: selectOptionsDefaultLabel,
+                  tagOptions,
+                  tagOptionsLimit,
+                  tagOptionsLimitValidationMessage,
+                  required,
+                  readOnly,
+                  spellCheck,
+                  capitalize,
+                  placeholder: loadingMessage && !formData[key]
                     ? loadingMessage
-                    : undefined}
-                  loading={
+                    : undefined,
+                  loading: (
                     (loadingMessage && !formData[key] ? true : false) ||
-                    isFieldGeneratingAi(key)}
-                  type={type}
-                  accessory={accessoryForField(key)}
-                />)}
-          <input
-            type="hidden"
-            name="shouldStripGpsData"
-            value={shouldStripGpsData ? 'true' : 'false'}
-            readOnly
-          />
+                    isFieldGeneratingAi(key)
+                  ),
+                  type,
+                  accessory: accessoryForField(key),
+                };
+
+                switch (key) {
+                case 'applyRecipeTitleGlobally':
+                  return <ApplyRecipeTitleGloballyCheckbox
+                    key={key}
+                    photoId={initialPhotoForm.id}
+                    recipeTitle={formData.recipeTitle}
+                    hasRecipeTitleChanged={
+                      changedFormKeys.includes('recipeTitle')}
+                    recipeData={formData.recipeData}
+                    simulation={formData.filmSimulation as FilmSimulation}
+                    onMatchResults={onMatchResults}
+                    {...fieldProps}
+                  />;
+                default:
+                  return <FieldSetWithStatus
+                    key={key}
+                    {...fieldProps}
+                  />;
+                }
+              }
+            })}
         </div>
         {/* Actions */}
         <div className={clsx(

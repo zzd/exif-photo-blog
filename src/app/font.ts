@@ -3,31 +3,18 @@ import path from 'path';
 import { cwd } from 'process';
 
 const FONT_IBM_PLEX_MONO_FAMILY = 'IBMPlexMono';
+const FONT_IBM_PLEX_MONO_PATH = '/public/fonts/IBMPlexMono-Medium.ttf';
 
-const FONT_IBM_PLEX_MONO_PATH_REGULAR = '/public/fonts/IBMPlexMono-Regular.ttf';
-const FONT_IBM_PLEX_MONO_PATH_MEDIUM = '/public/fonts/IBMPlexMono-Medium.ttf';
+const getFontData = async () =>
+  fs.readFileSync(path.join(cwd(), FONT_IBM_PLEX_MONO_PATH));
 
-const getFontData = async (fontPath: string) =>
-  fs.readFileSync(path.join(cwd(), fontPath));
-
-export const getIBMPlexMono = async () => {
-  const [regular, medium] = await Promise.all([
-    getFontData(FONT_IBM_PLEX_MONO_PATH_REGULAR),
-    getFontData(FONT_IBM_PLEX_MONO_PATH_MEDIUM),
-  ]);
-  return {
+export const getIBMPlexMono = () => getFontData()
+  .then(data => ({
     fontFamily: FONT_IBM_PLEX_MONO_FAMILY,
     fonts: [{
       name: FONT_IBM_PLEX_MONO_FAMILY,
-      data: regular,
-      weight: 400,
-      style: 'normal',
-    } as const, {
-      name: FONT_IBM_PLEX_MONO_FAMILY,
-      data: medium,
+      data,
       weight: 500,
       style: 'normal',
-    } as const,
-    ],
-  };
-};
+    } as const],
+  }));

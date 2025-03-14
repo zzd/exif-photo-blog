@@ -10,6 +10,9 @@ import {
   getPhotos,
   addTagsToPhotos,
   getUniqueTags,
+  deletePhotoRecipeGlobally,
+  renamePhotoRecipeGlobally,
+  getPhotosNeedingRecipeTitleCount,
 } from '@/photo/db/query';
 import { GetPhotosOptions, areOptionsSensitive } from './db';
 import {
@@ -25,10 +28,12 @@ import {
   revalidateAllKeysAndPaths,
   revalidatePhoto,
   revalidatePhotosKey,
+  revalidateRecipesKey,
   revalidateTagsKey,
 } from '@/photo/cache';
 import {
   PATH_ADMIN_PHOTOS,
+  PATH_ADMIN_RECIPES,
   PATH_ADMIN_TAGS,
   PATH_ROOT,
   pathForPhoto,
@@ -55,16 +60,17 @@ import { convertUploadToPhoto } from './storage';
 import { UrlAddStatus } from '@/admin/AdminUploadsClient';
 import { convertStringToArray } from '@/utility/string';
 import { after } from 'next/server';
+import { FilmSimulation } from '@/simulation';
 
 // Private actions
 
 export const createPhotoAction = async (formData: FormData) =>
   runAuthenticatedAdminServerAction(async () => {
     const shouldStripGpsData = formData.get('shouldStripGpsData') === 'true';
-    formData.delete('shouldStripGpsData');
 
-    const photo =
-      await convertFormDataToPhotoDbInsertAndLookupRecipeTitle(formData);
+    const photo = await convertFormDataToPhotoDbInsertAndLookupRecipeTitle(
+      formData,
+    );
 
     const updatedUrl = await convertUploadToPhoto({
       urlOrigin: photo.url,
@@ -298,6 +304,42 @@ export const renamePhotoTagGloballyAction = async (formData: FormData) =>
       revalidatePhotosKey();
       revalidateTagsKey();
       redirect(PATH_ADMIN_TAGS);
+    }
+  });
+
+export const getPhotosNeedingRecipeTitleCountAction = async (
+  recipeData: string,
+  simulation: FilmSimulation,
+  photoIdToExclude?: string,
+) =>
+  runAuthenticatedAdminServerAction(async () =>
+    await getPhotosNeedingRecipeTitleCount(
+      recipeData,
+      simulation,
+      photoIdToExclude,
+    ),
+  );
+
+export const deletePhotoRecipeGloballyAction = async (formData: FormData) =>
+  runAuthenticatedAdminServerAction(async () => {
+    const recipe = formData.get('recipe') as string;
+
+    await deletePhotoRecipeGlobally(recipe);
+
+    revalidatePhotosKey();
+    revalidateAdminPaths();
+  });
+
+export const renamePhotoRecipeGloballyAction = async (formData: FormData) =>
+  runAuthenticatedAdminServerAction(async () => {
+    const recipe = formData.get('recipe') as string;
+    const updatedRecipe = formData.get('updatedRecipe') as string;
+
+    if (recipe && updatedRecipe && recipe !== updatedRecipe) {
+      await renamePhotoRecipeGlobally(recipe, updatedRecipe);
+      revalidatePhotosKey();
+      revalidateRecipesKey();
+      redirect(PATH_ADMIN_RECIPES);
     }
   });
 

@@ -7,8 +7,12 @@ import { testDatabaseConnection } from '@/platforms/postgres';
 import { testStorageConnection } from '@/platforms/storage';
 import { APP_CONFIGURATION } from '@/app/config';
 import { getStorageUploadUrlsNoStore } from '@/platforms/storage/cache';
-import { getPhotosMetaCached, getUniqueTagsCached } from '@/photo/cache';
 import { getInsightsIndicatorStatus } from '@/admin/insights/server';
+import {
+  getPhotosMeta,
+  getUniqueTags,
+  getUniqueRecipes,
+} from '@/photo/db/query';
 
 export type AdminData = Awaited<ReturnType<typeof getAdminDataAction>>;
 
@@ -17,18 +21,16 @@ export const getAdminDataAction = async () =>
     const [
       photosCount,
       photosCountHidden,
-      tagsCount,
       uploadsCount,
+      tagsCount,
+      recipesCount,
       insightsIndicatorStatus,
     ] = await Promise.all([
-      getPhotosMetaCached()
+      getPhotosMeta()
         .then(({ count }) => count)
         .catch(() => 0),
-      getPhotosMetaCached({ hidden: 'only' })
+      getPhotosMeta({ hidden: 'only' })
         .then(({ count }) => count)
-        .catch(() => 0),
-      getUniqueTagsCached()
-        .then(tags => tags.length)
         .catch(() => 0),
       getStorageUploadUrlsNoStore()
         .then(urls => urls.length)
@@ -36,6 +38,12 @@ export const getAdminDataAction = async () =>
           console.error(`Error getting blob upload urls: ${e}`);
           return 0;
         }),
+      getUniqueTags()
+        .then(tags => tags.length)
+        .catch(() => 0),
+      getUniqueRecipes()
+        .then(recipes => recipes.length)
+        .catch(() => 0),
       getInsightsIndicatorStatus(),
     ]);
 
@@ -50,8 +58,9 @@ export const getAdminDataAction = async () =>
       photosCount,
       photosCountHidden,
       photosCountTotal,
-      tagsCount,
       uploadsCount,
+      tagsCount,
+      recipesCount,
       insightsIndicatorStatus,
     };
   });

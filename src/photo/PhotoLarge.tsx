@@ -323,7 +323,11 @@ export default function PhotoLarge({
                     ) &&
                       <>
                         {' '}
-                        <Tooltip content="35mm equivalent" sideOffset={3}>
+                        <Tooltip
+                          content="35mm equivalent"
+                          sideOffset={3}
+                          supportMobile
+                        >
                           <span
                             className={clsx(
                               'text-extra-dim',
@@ -349,14 +353,15 @@ export default function PhotoLarge({
                         prefetch={prefetchRelatedLinks}
                       />}
                     {shouldRenderRecipe &&
-                      <Tooltip
-                        content="Fujifilm Recipe"
-                        desktopOnly
-                      >
+                      <Tooltip content="Fujifilm Recipe">
                         <button
                           ref={refRecipeButton}
                           title="Fujifilm Recipe"
-                          onClick={toggleRecipeOverlay}
+                          onClick={() => {
+                            toggleRecipeOverlay();
+                            // Avoid unexpected tooltip trigger
+                            refRecipeButton.current?.blur();
+                          }}
                           className={clsx(
                             'text-medium',
                             'border-medium rounded-md',

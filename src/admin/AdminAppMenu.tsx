@@ -5,6 +5,7 @@ import {
   PATH_ADMIN_CONFIGURATION,
   PATH_ADMIN_INSIGHTS,
   PATH_ADMIN_PHOTOS,
+  PATH_ADMIN_RECIPES,
   PATH_ADMIN_TAGS,
   PATH_ADMIN_UPLOADS,
   PATH_GRID_INFERRED,
@@ -13,7 +14,7 @@ import { useAppState } from '@/state/AppState';
 import { ImCheckboxUnchecked } from 'react-icons/im';
 import { IoArrowDown, IoArrowUp, IoCloseSharp } from 'react-icons/io5';
 import { clsx } from 'clsx/lite';
-import { TbPhoto } from 'react-icons/tb';
+import { TbChecklist, TbPhoto } from 'react-icons/tb';
 import { FiTag } from 'react-icons/fi';
 import { BiLockAlt } from 'react-icons/bi';
 import AdminAppInfoIcon from './AdminAppInfoIcon';
@@ -37,6 +38,7 @@ export default function AdminAppMenu({
     photosCountTotal = 0,
     uploadsCount = 0,
     tagsCount = 0,
+    recipesCount = 0,
     selectedPhotoIds,
     startUpload,
     setSelectedPhotoIds,
@@ -63,17 +65,21 @@ export default function AdminAppMenu({
         resolve();
       }
     }),
-  }, {
-    label: 'Manage Photos',
-    ...photosCountTotal && {
-      annotation: `${photosCountTotal}`,
-    },
-    icon: <TbPhoto
-      size={15}
-      className="translate-x-[-0.5px] translate-y-[0.5px]"
-    />,
-    href: PATH_ADMIN_PHOTOS,
   }];
+
+  if (photosCountTotal) {
+    items.push({
+      label: 'Manage Photos',
+      ...photosCountTotal && {
+        annotation: `${photosCountTotal}`,
+      },
+      icon: <TbPhoto
+        size={15}
+        className="translate-x-[-0.5px] translate-y-[0.5px]"
+      />,
+      href: PATH_ADMIN_PHOTOS,
+    });
+  }
 
   if (uploadsCount) {
     items.push({
@@ -99,6 +105,45 @@ export default function AdminAppMenu({
     });
   }
 
+  if (recipesCount) {
+    items.push({
+      label: 'Manage Recipes',
+      annotation: `${recipesCount}`,
+      icon: <TbChecklist
+        size={17}
+        className="translate-x-[-0.5px] translate-y-[0.5px]"
+      />,
+      href: PATH_ADMIN_RECIPES,
+    });
+  }
+
+  if (photosCountTotal) {
+    items.push({
+      label: isSelecting
+        ? 'Exit Select'
+        : 'Edit Multiple',
+      icon: isSelecting
+        ? <IoCloseSharp
+          className="text-[18px] translate-x-[-1px] translate-y-[1px]"
+        />
+        : <ImCheckboxUnchecked
+          className="translate-x-[-0.5px] text-[0.75rem]"
+        />,
+      href: PATH_GRID_INFERRED,
+      action: () => {
+        if (isSelecting) {
+          setSelectedPhotoIds?.(undefined);
+        } else {
+          setSelectedPhotoIds?.([]);
+        }
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      },
+      shouldPreventDefault: false,
+    });
+  }
+
   items.push({
     label: showAppInsightsLink
       ? 'App Insights'
@@ -110,29 +155,6 @@ export default function AdminAppMenu({
     href: showAppInsightsLink
       ? PATH_ADMIN_INSIGHTS
       : PATH_ADMIN_CONFIGURATION,
-  }, {
-    label: isSelecting
-      ? 'Exit Select'
-      : 'Edit Multiple',
-    icon: isSelecting
-      ? <IoCloseSharp
-        className="text-[18px] translate-x-[-1px] translate-y-[1px]"
-      />
-      : <ImCheckboxUnchecked
-        className="translate-x-[-0.5px] text-[0.75rem]"
-      />,
-    href: PATH_GRID_INFERRED,
-    action: () => {
-      if (isSelecting) {
-        setSelectedPhotoIds?.(undefined);
-      } else {
-        setSelectedPhotoIds?.([]);
-      }
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
-      }
-    },
-    shouldPreventDefault: false,
   }, {
     label: 'Sign Out',
     icon: <PiSignOutBold size={15} />,
