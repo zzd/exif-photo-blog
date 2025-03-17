@@ -42,6 +42,8 @@ import { convertRecipesForForm, Recipes } from '@/recipe';
 import deepEqual from 'fast-deep-equal/es6/react';
 import ApplyRecipeTitleGloballyCheckbox from './ApplyRecipesGloballyCheckbox';
 import { FilmSimulation } from '@/simulation';
+import IconFavs from '@/components/icons/IconFavs';
+import IconHidden from '@/components/icons/IconHidden';
 
 const THUMBNAIL_SIZE = 300;
 
@@ -414,6 +416,21 @@ export default function PhotoForm({
                     recipeData={formData.recipeData}
                     simulation={formData.filmSimulation as FilmSimulation}
                     onMatchResults={onMatchResults}
+                    {...fieldProps}
+                  />;
+                case 'favorite':
+                  return <FieldSetWithStatus
+                    key={key}
+                    icon={<IconFavs
+                      size={14}
+                      highlight={formData[key] === 'true'}
+                    />}
+                    {...fieldProps}
+                  />;
+                case 'hidden':
+                  return <FieldSetWithStatus
+                    key={key}
+                    icon={<IconHidden size={16} />}
                     {...fieldProps}
                   />;
                 default:

@@ -1,14 +1,12 @@
 'use client';
 
-import { StorageListResponse } from '@/platforms/storage';
+import { StorageListItem, StorageListResponse } from '@/platforms/storage';
 import AdminBatchUploadActions from './AdminBatchUploadActions';
 import { useMemo, useState } from 'react';
 import { Tags } from '@/tag';
 import AdminUploadsTable from './AdminUploadsTable';
 
-export type UrlAddStatus = {
-  url: string
-  uploadedAt?: Date
+export type UrlAddStatus = StorageListItem & {
   status?: 'waiting' | 'adding' | 'added'
   statusMessage?: string
   progress?: number

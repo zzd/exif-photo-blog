@@ -84,3 +84,10 @@ export const formatNumberToFraction = (number: number) => {
     return `${sign}${integer}${decimalFormatted}`;
   }
 };
+
+export const formatBytesToMB = (
+  bytes: number,
+  byteSize = 1000,
+  precision = 1,
+) =>
+  `${(bytes / byteSize / byteSize).toFixed(precision)}MB`;

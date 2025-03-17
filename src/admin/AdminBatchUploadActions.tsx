@@ -12,7 +12,6 @@ import {
 } from '@/utility/date';
 import sleep from '@/utility/sleep';
 import { readStreamableValue } from 'ai/rsc';
-import { clsx } from 'clsx/lite';
 import { useRouter } from 'next/navigation';
 import { Dispatch, SetStateAction, useRef, useState } from 'react';
 import { BiCheckCircle, BiImageAdd } from 'react-icons/bi';
@@ -21,6 +20,9 @@ import { UrlAddStatus } from './AdminUploadsClient';
 import PhotoTagFieldset from './PhotoTagFieldset';
 import DeleteUploadButton from './DeleteUploadButton';
 import { useAppState } from '@/state/AppState';
+import { pluralize } from '@/utility/string';
+import IconFavs from '@/components/icons/IconFavs';
+import IconHidden from '@/components/icons/IconHidden';
 
 const UPLOAD_BATCH_SIZE = 4;
 
@@ -43,11 +45,14 @@ export default function AdminBatchUploadActions({
 }) {
   const { updateAdminData } = useAppState();
 
-  const [buttonText, setButtonText] = useState('Add All Uploads');
-  const [showTags, setShowTags] = useState(false);
+  const [showBulkSettings, setShowBulkSettings] = useState(false);
   const [tags, setTags] = useState('');
-  const [actionErrorMessage, setActionErrorMessage] = useState('');
+  const [favorite, setFavorite] = useState('false');
+  const [hidden, setHidden] = useState('false');
   const [tagErrorMessage, setTagErrorMessage] = useState('');
+
+  const [buttonText, setButtonText] = useState('Add All Uploads');
+  const [actionErrorMessage, setActionErrorMessage] = useState('');
   const [addingProgress, setAddingProgress] = useState<number>();
   const [isAddingComplete, setIsAddingComplete] = useState(false);
 
@@ -58,7 +63,11 @@ export default function AdminBatchUploadActions({
     try {
       const stream = await addAllUploadsAction({
         uploadUrls,
-        tags: showTags ? tags : undefined,
+        ...showBulkSettings && {
+          tags,
+          favorite,
+          hidden,
+        },
         takenAtLocal: generateLocalPostgresString(),
         takenAtNaiveLocal: generateLocalNaivePostgresString(),
         shouldRevalidateAllKeysAndPaths: isFinalBatch,
@@ -112,33 +121,48 @@ export default function AdminBatchUploadActions({
       <Container padding="tight">
         <div className="w-full space-y-4 py-1">
           <div className="flex">
-            <div className={clsx(
-              'grow',
-              tagErrorMessage ? 'text-error' : 'text-main',
-            )}>
-              {showTags
-                ? tagErrorMessage || 'Add tags to all uploads'
-                : `Found ${storageUrls.length} uploads`}
+            <div className="grow text-main">
+              {showBulkSettings
+                ? `Apply to ${pluralize(storageUrls.length, 'upload')}`
+                : `Found ${pluralize(storageUrls.length, 'upload')}`}
             </div>
             <FieldSetWithStatus
-              id="show-tags"
-              label="Apply tags"
+              label="Apply to All"
               type="checkbox"
-              value={showTags ? 'true' : 'false'}
-              onChange={value => setShowTags(value === 'true')}
+              value={showBulkSettings ? 'true' : 'false'}
+              onChange={value => setShowBulkSettings(value === 'true')}
               readOnly={isAdding}
             />
           </div>
-          {showTags && !actionErrorMessage &&
-            <PhotoTagFieldset
-              tags={tags}
-              tagOptions={uniqueTags}
-              onChange={setTags}
-              onError={setTagErrorMessage}
-              readOnly={isAdding}
-              openOnLoad
-              hideLabel
-            />}
+          {showBulkSettings && !actionErrorMessage &&
+            <div className="space-y-4 mb-6">
+              <PhotoTagFieldset
+                label="Tags"
+                tags={tags}
+                tagOptions={uniqueTags}
+                onChange={setTags}
+                onError={setTagErrorMessage}
+                readOnly={isAdding}
+              />
+              <div className="flex gap-8">
+                <FieldSetWithStatus
+                  label="Favorite"
+                  icon={<IconFavs size={14} highlight={favorite === 'true'} />}
+                  type="checkbox"
+                  value={favorite}
+                  onChange={setFavorite}
+                  readOnly={isAdding}
+                />
+                <FieldSetWithStatus
+                  label="Hidden"
+                  icon={<IconHidden size={16} />}
+                  type="checkbox"
+                  value={hidden}
+                  onChange={setHidden}
+                  readOnly={isAdding}
+                />
+              </div>
+            </div>}
           <div className="space-y-2">
             <ProgressButton
               primary
