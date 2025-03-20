@@ -51,16 +51,22 @@ export default function AdminBatchEditPanelClient({
     false,
   );
 
-  const renderPhotoCTA = () => selectedPhotoIds?.length === 0
+  const isFormDisabled =
+    isPerformingSelectEdit ||
+    selectedPhotoIds?.length === 0;
+
+  const renderPhotoCTA = selectedPhotoIds?.length === 0
     ? <>
       <FaArrowDown />
-      Select photos below
+      <ResponsiveText shortText="Select below">
+        Select photos below
+      </ResponsiveText>
     </>
     : <ResponsiveText shortText={photosText}>
       {photosText} selected
     </ResponsiveText>;
 
-  const renderActions = () => isInTagMode
+  const renderActions = isInTagMode
     ? <>
       <LoaderButton
         className="min-h-[2.5rem]"
@@ -105,40 +111,37 @@ export default function AdminBatchEditPanelClient({
       </LoaderButton>
     </>
     : <>
-      {(selectedPhotoIds?.length ?? 0) > 0 &&
-        <>
-          <DeletePhotosButton
-            photoIds={selectedPhotoIds}
-            disabled={isPerformingSelectEdit}
-            onClick={() => setIsPerformingSelectEdit?.(true)}
-            onDelete={resetForm}
-            onFinish={() => setIsPerformingSelectEdit?.(false)}
-          />
-          <LoaderButton
-            icon={<IconFavs />}
-            disabled={isPerformingSelectEdit}
-            confirmText={`Are you sure you want to favorite ${photosText}?`}
-            onClick={() => {
-              setIsPerformingSelectEdit?.(true);
-              tagMultiplePhotosAction(
-                TAG_FAVS,
-                selectedPhotoIds ?? [],
-              )
-                .then(() => {
-                  toastSuccess(`${photosText} favorited`);
-                  resetForm();
-                })
-                .finally(() => setIsPerformingSelectEdit?.(false));
-            }}
-          />
-          <LoaderButton
-            onClick={() => setTags('')}
-            disabled={isPerformingSelectEdit}
-            icon={<IconTag size={15} className="translate-y-[1.5px]" />}
-          >
-            Tag ...
-          </LoaderButton>
-        </>}
+      <DeletePhotosButton
+        photoIds={selectedPhotoIds}
+        disabled={isFormDisabled}
+        onClick={() => setIsPerformingSelectEdit?.(true)}
+        onDelete={resetForm}
+        onFinish={() => setIsPerformingSelectEdit?.(false)}
+      />
+      <LoaderButton
+        icon={<IconFavs />}
+        disabled={isFormDisabled}
+        confirmText={`Are you sure you want to favorite ${photosText}?`}
+        onClick={() => {
+          setIsPerformingSelectEdit?.(true);
+          tagMultiplePhotosAction(
+            TAG_FAVS,
+            selectedPhotoIds ?? [],
+          )
+            .then(() => {
+              toastSuccess(`${photosText} favorited`);
+              resetForm();
+            })
+            .finally(() => setIsPerformingSelectEdit?.(false));
+        }}
+      />
+      <LoaderButton
+        onClick={() => setTags('')}
+        disabled={isFormDisabled}
+        icon={<IconTag size={15} className="translate-y-[1.5px]" />}
+      >
+        Tag ...
+      </LoaderButton>
       <LoaderButton
         icon={<IoCloseSharp size={19} />}
         onClick={() => setSelectedPhotoIds?.(undefined)}
@@ -165,7 +168,7 @@ export default function AdminBatchEditPanelClient({
           )}
           padding={isInTagMode ? 'tight-cta-right-left' : 'tight-cta-right'}
           cta={<div className="flex items-center gap-1.5 sm:gap-2.5">
-            {renderActions()}
+            {renderActions}
           </div>}
           spaceChildren={false}
           hideIcon
@@ -182,7 +185,7 @@ export default function AdminBatchEditPanelClient({
               hideLabel
             />
             : <div className="text-base flex gap-2 items-center">
-              {renderPhotoCTA()}
+              {renderPhotoCTA}
             </div>}
         </Note>
         {tagErrorMessage &&

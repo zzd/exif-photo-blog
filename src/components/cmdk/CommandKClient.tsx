@@ -17,6 +17,7 @@ import {
   PATH_ADMIN_CONFIGURATION,
   PATH_ADMIN_INSIGHTS,
   PATH_ADMIN_PHOTOS,
+  PATH_ADMIN_RECIPES,
   PATH_ADMIN_TAGS,
   PATH_ADMIN_UPLOADS,
   PATH_FEED_INFERRED,
@@ -56,7 +57,7 @@ import { CATEGORY_VISIBILITY, GRID_HOMEPAGE_ENABLED } from '@/app/config';
 import { DialogDescription, DialogTitle } from '@radix-ui/react-dialog';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import InsightsIndicatorDot from '@/admin/insights/InsightsIndicatorDot';
-import { PhotoSetCategories } from '@/photo/set';
+import { PhotoSetCategories } from '@/category';
 import { formatCameraText } from '@/camera';
 import { labelForFilmSimulation } from '@/platforms/fujifilm/simulation';
 import { formatFocalLength } from '@/focal';
@@ -79,12 +80,13 @@ const MINIMUM_QUERY_LENGTH = 2;
 
 type CommandKItem = {
   label: ReactNode
+  explicitKey?: string
   keywords?: string[]
   accessory?: ReactNode
   annotation?: ReactNode
   annotationAria?: string
   path?: string
-  action?: () => void | Promise<void>
+  action?: () => void | Promise<void | boolean>
 }
 
 type CommandKSection = {
@@ -122,9 +124,11 @@ export default function CommandKClient({
     isUserSignedIn,
     clearAuthStateAndRedirect,
     isCommandKOpen: isOpen,
+    startUpload,
     photosCountHidden,
     uploadsCount,
     tagsCount,
+    recipesCount,
     selectedPhotoIds,
     setSelectedPhotoIds,
     insightsIndicatorStatus,
@@ -148,19 +152,21 @@ export default function CommandKClient({
 
   const isOpenRef = useRef(isOpen);
   
+  // Manage action/path waiting state
+  const [keyWaiting, setKeyWaiting] = useState<string>();
   const [isPending, startTransition] = useTransition();
-  const [keyPending, setKeyPending] = useState<string>();
-  const shouldCloseAfterPending = useRef(false);
-
+  const [isWaitingForAction, setIsWaitingForAction] = useState(false);
+  const isWaiting = isPending || isWaitingForAction;
+  const shouldCloseAfterWaiting = useRef(false);
   useEffect(() => {
-    if (!isPending) {
-      setKeyPending(undefined);
-      if (shouldCloseAfterPending.current) {
+    if (!isWaiting) {
+      setKeyWaiting(undefined);
+      if (shouldCloseAfterWaiting.current) {
         setIsOpen?.(false);
-        shouldCloseAfterPending.current = false;
+        shouldCloseAfterWaiting.current = false;
       }
     }
-  }, [isPending, setIsOpen]);
+  }, [isWaiting, setIsOpen]);
 
   // Raw query values
   const [queryLiveRaw, setQueryLive] = useState('');
@@ -272,6 +278,7 @@ export default function CommandKClient({
           accessory: <IconLens size={14} className="translate-y-[0.5px]" />,
           items: lenses.map(({ lens, count }) => ({
             label: formatLensText(lens, 'medium'),
+            explicitKey: formatLensText(lens, 'long'),
             annotation: formatCount(count),
             annotationAria: formatCountDescriptive(count),
             path: pathForLens(lens),
@@ -424,17 +431,22 @@ export default function CommandKClient({
 
   if (isUserSignedIn) {
     adminSection.items.push({
-      label: 'Manage Photos',
+      label: 'Upload Photos',
       annotation: <IconLock narrow />,
-      path: PATH_ADMIN_PHOTOS,
+      action: startUpload,
     });
     if (uploadsCount) {
       adminSection.items.push({
-        label: 'Manage Uploads',
+        label: `Uploads (${uploadsCount})`,
         annotation: <IconLock narrow />,
         path: PATH_ADMIN_UPLOADS,
       });
     }
+    adminSection.items.push({
+      label: 'Manage Photos',
+      annotation: <IconLock narrow />,
+      path: PATH_ADMIN_PHOTOS,
+    });
     if (tagsCount) {
       adminSection.items.push({
         label: 'Manage Tags',
@@ -442,7 +454,25 @@ export default function CommandKClient({
         path: PATH_ADMIN_TAGS,
       });
     }
+    if (recipesCount) {
+      adminSection.items.push({
+        label: 'Manage Recipes',
+        annotation: <IconLock narrow />,
+        path: PATH_ADMIN_RECIPES,
+      });
+    }
     adminSection.items.push({
+      label: selectedPhotoIds === undefined
+        ? 'Batch Edit Photos ...'
+        : 'Exit Batch Edit',
+      annotation: <IconLock narrow />,
+      path: selectedPhotoIds === undefined
+        ? PATH_GRID_INFERRED
+        : undefined,
+      action: selectedPhotoIds === undefined
+        ? () => setSelectedPhotoIds?.([])
+        : () => setSelectedPhotoIds?.(undefined),
+    }, {
       label: <span className="flex items-center gap-3">
         App Insights
         {insightsIndicatorStatus &&
@@ -455,17 +485,6 @@ export default function CommandKClient({
       label: 'App Config',
       annotation: <IconLock narrow />,
       path: PATH_ADMIN_CONFIGURATION,
-    }, {
-      label: selectedPhotoIds === undefined
-        ? 'Select Multiple Photos'
-        : 'Exit Select Multiple Photos',
-      annotation: <IconLock narrow />,
-      path: selectedPhotoIds === undefined
-        ? PATH_GRID_INFERRED
-        : undefined,
-      action: selectedPhotoIds === undefined
-        ? () => setSelectedPhotoIds?.([])
-        : () => setSelectedPhotoIds?.(undefined),
     });
     if (showDebugTools) {
       adminSection.items.push({
@@ -505,20 +524,24 @@ export default function CommandKClient({
       <Modal
         anchor='top'
         onClose={() => setIsOpen?.(false)}
+        noPadding
         fast
       >
-        <div className="space-y-1.5">
+        <VisuallyHidden.Root>
+          <DialogTitle>{DIALOG_TITLE}</DialogTitle>
+          <DialogDescription>{DIALOG_DESCRIPTION}</DialogDescription>
+        </VisuallyHidden.Root>
+        <div className={clsx(
+          'px-3 md:px-4',
+          'pt-3 md:pt-4',
+        )}>
           <div className="relative">
-            <VisuallyHidden.Root>
-              <DialogTitle>{DIALOG_TITLE}</DialogTitle>
-              <DialogDescription>{DIALOG_DESCRIPTION}</DialogDescription>
-            </VisuallyHidden.Root>
             <Command.Input
               onChangeCapture={(e) => setQueryLive(e.currentTarget.value)}
               className={clsx(
                 'w-full min-w-0!',
                 'focus:ring-0',
-                isPlaceholderVisible || isLoading && 'pr-8!',
+                isPlaceholderVisible || isLoading && 'pr-10!',
                 'border-gray-200! dark:border-gray-800!',
                 'focus:border-gray-200 dark:focus:border-gray-800',
                 'placeholder:text-gray-400/80',
@@ -531,93 +554,116 @@ export default function CommandKClient({
             />
             {isLoading && !isPending &&
               <span className={clsx(
-                'absolute top-2.5 right-0 w-8',
+                'absolute top-[9px] right-0 w-10',
                 'flex items-center justify-center translate-y-[2px]',
               )}>
                 <Spinner size={16} />
               </span>}
           </div>
-          <Command.List className={clsx(
-            'relative overflow-y-auto',
-            'max-h-48 sm:max-h-72',
-          )}>
-            <Command.Empty className="mt-1 pl-3 text-dim">
+        </div>
+        <Command.List className={clsx(
+          'relative overflow-y-auto',
+          'max-h-48 sm:max-h-72',
+          'mx-3 md:mx-4',
+          'pt-3 md:pt-4',
+        )} style={{
+          // eslint-disable-next-line max-len
+          maskImage: 'linear-gradient(to bottom, transparent, black 20px, black calc(100% - 20px), transparent)',
+        }}>
+          <div className="pb-1 md:pb-2">
+            <Command.Empty className="mt-1 pl-3 text-dim pb-4">
               {isLoading ? 'Searching ...' : 'No results found'}
             </Command.Empty>
-            {queriedSections
-              .concat(categorySections)
-              .concat(sectionPages)
-              .concat(adminSection)
-              .concat(clientSections)
-              .filter(({ items }) => items.length > 0)
-              .map(({ heading, accessory, items }) =>
-                <Command.Group
-                  key={heading}
-                  heading={<div className={clsx(
-                    'flex items-center',
-                    'px-2',
-                    isPending && 'opacity-20',
-                  )}>
-                    {accessory &&
-                      <div className="w-5">{accessory}</div>}
-                    {heading}
-                  </div>}
-                  className={clsx(
-                    'uppercase',
-                    'select-none',
-                    '[&>*:first-child]:py-1',
-                    '[&>*:first-child]:font-medium',
-                    '[&>*:first-child]:text-dim',
-                    '[&>*:first-child]:text-xs',
-                    '[&>*:first-child]:tracking-wider',
-                  )}
-                >
-                  {items.map(({
-                    label,
-                    keywords,
-                    accessory,
-                    annotation,
-                    annotationAria,
-                    path,
-                    action,
-                  }) => {
-                    const key = `${heading} ${label}`;
-                    return <CommandKItem
-                      key={key}
-                      label={label}
-                      value={key}
-                      keywords={keywords}
-                      onSelect={() => {
-                        if (action) {
-                          action();
-                          if (!path) { setIsOpen?.(false); }
-                        }
-                        if (path) {
-                          if (path !== pathname) {
-                            setKeyPending(key);
-                            startTransition(() => {
-                              shouldCloseAfterPending.current = true;
-                              router.push(path, { scroll: true });
-                            });
-                          } else {
-                            setIsOpen?.(false);
+            <div className="space-y-2.5">
+              {queriedSections
+                .concat(categorySections)
+                .concat(sectionPages)
+                .concat(adminSection)
+                .concat(clientSections)
+                .filter(({ items }) => items.length > 0)
+                .map(({ heading, accessory, items }) =>
+                  <Command.Group
+                    key={heading}
+                    heading={<div className={clsx(
+                      'flex items-center',
+                      'px-2 pb-0.5',
+                      isPending && 'opacity-20',
+                    )}>
+                      {accessory &&
+                        <div className="w-5">{accessory}</div>}
+                      {heading}
+                    </div>}
+                    className={clsx(
+                      'uppercase',
+                      'select-none',
+                      '[&>*:first-child]:py-1',
+                      '[&>*:first-child]:font-medium',
+                      '[&>*:first-child]:text-dim',
+                      '[&>*:first-child]:text-xs',
+                      '[&>*:first-child]:tracking-wider',
+                    )}
+                  >
+                    {items.map(({
+                      label,
+                      explicitKey,
+                      keywords,
+                      accessory,
+                      annotation,
+                      annotationAria,
+                      path,
+                      action,
+                    }) => {
+                      const key = `${heading} ${explicitKey ?? label}`;
+                      return <CommandKItem
+                        key={key}
+                        label={label}
+                        value={key}
+                        keywords={keywords}
+                        onSelect={() => {
+                          if (action) {
+                            const result = action();
+                            if (result instanceof Promise) {
+                              setKeyWaiting(key);
+                              setIsWaitingForAction(true);
+                              result.then(shouldClose => {
+                                shouldCloseAfterWaiting.current =
+                                  shouldClose === true;
+                                setIsWaitingForAction(false);
+                              });
+                            } else {
+                              if (!path) { setIsOpen?.(false); }
+                            }
                           }
-                        }
-                      }}
-                      accessory={accessory}
-                      annotation={annotation}
-                      annotationAria={annotationAria}
-                      loading={key === keyPending}
-                      disabled={isPending && key !== keyPending}
-                    />;
-                  })}
-                </Command.Group>)}
+                          if (path) {
+                            if (path !== pathname) {
+                              setKeyWaiting(key);
+                              shouldCloseAfterWaiting.current = true;
+                              startTransition(() => {
+                                router.push(path, { scroll: true });
+                              });
+                            } else {
+                              setIsOpen?.(false);
+                            }
+                          }
+                        }}
+                        accessory={accessory}
+                        annotation={annotation}
+                        annotationAria={annotationAria}
+                        loading={key === keyWaiting}
+                        disabled={isPending && key !== keyWaiting}
+                      />;
+                    })}
+                  </Command.Group>)}
+            </div>
             {footer && !queryLive &&
-              <div className="text-center text-dim pt-3 sm:pt-4">
+              <div className={clsx(
+                'text-center text-base text-dim pt-2 sm:pt-3',
+                'pb-2.5',
+              )}>
                 {footer}
               </div>}
-          </Command.List>
-        </div>
+          </div>
+        </Command.List>
       </Modal>
     </Command.Dialog>
   );

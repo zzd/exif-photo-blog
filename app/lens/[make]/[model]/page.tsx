@@ -1,16 +1,21 @@
 import { Metadata } from 'next/types';
 import { INFINITE_SCROLL_GRID_INITIAL } from '@/photo';
 import { cache } from 'react';
-import { STATICALLY_OPTIMIZED_PHOTO_CATEGORIES } from '@/app/config';
-import { IS_PRODUCTION } from '@/app/config';
 import { getUniqueLenses } from '@/photo/db/query';
 import { generateMetaForLens } from '@/lens/meta';
 import { getPhotosLensDataCached } from '@/lens/data';
 import LensOverview from '@/lens/LensOverview';
-import { LensProps } from '@/lens';
+import {
+  getLensFromParams,
+  LensProps,
+  safelyGenerateLensStaticParams,
+} from '@/lens';
+import {
+  staticallyGenerateCategoryIfConfigured,
+} from '@/app/static';
 
 const getPhotosLensDataCachedCached = cache((
-  make: string,
+  make: string | undefined,
   model: string,
 ) => getPhotosLensDataCached(
   make,
@@ -18,20 +23,17 @@ const getPhotosLensDataCachedCached = cache((
   INFINITE_SCROLL_GRID_INITIAL,
 ));
 
-export let generateStaticParams:
-  (() => Promise<{ make: string, model: string }[]>) | undefined = undefined;
-
-if (STATICALLY_OPTIMIZED_PHOTO_CATEGORIES && IS_PRODUCTION) {
-  generateStaticParams = async () => {
-    const lenses = await getUniqueLenses();
-    return lenses.map(({ lens: { make, model } }) => ({ make, model }));
-  };
-}
+export const generateStaticParams = staticallyGenerateCategoryIfConfigured(
+  'lenses',
+  'page',
+  getUniqueLenses,
+  safelyGenerateLensStaticParams,
+);
 
 export async function generateMetadata({
   params,
 }: LensProps): Promise<Metadata> {
-  const { make, model } = await params;
+  const { make, model } = await getLensFromParams(params);
 
   const [
     photos,
@@ -66,7 +68,7 @@ export async function generateMetadata({
 export default async function LensPage({
   params,
 }: LensProps) {
-  const { make, model } = await params;
+  const { make, model } = await getLensFromParams(params);
 
   const [
     photos,

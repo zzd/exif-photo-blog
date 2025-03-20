@@ -11,13 +11,12 @@ import {
   PATH_GRID_INFERRED,
 } from '@/app/paths';
 import { useAppState } from '@/state/AppState';
-import { IoArrowDown, IoArrowUp } from 'react-icons/io5';
+import { IoArrowDown, IoArrowUp, IoCloseSharp } from 'react-icons/io5';
 import { clsx } from 'clsx/lite';
 import AdminAppInfoIcon from './AdminAppInfoIcon';
 import { signOutAction } from '@/auth/actions';
 import { ComponentProps } from 'react';
 import useIsKeyBeingPressed from '@/utility/useIsKeyBeingPressed';
-import IconSelectMultiple from '@/components/icons/IconSelectMultiple';
 import IconPhoto from '@/components/icons/IconPhoto';
 import IconUpload from '@/components/icons/IconUpload';
 import IconRecipe from '@/components/icons/IconRecipe';
@@ -25,6 +24,7 @@ import IconTag from '@/components/icons/IconTag';
 import IconFolder from '@/components/icons/IconFolder';
 import IconSignOut from '@/components/icons/IconSignOut';
 import IconLock from '@/components/icons/IconLock';
+import { IoMdCheckboxOutline } from 'react-icons/io';
 
 export default function AdminAppMenu({
   active,
@@ -59,15 +59,20 @@ export default function AdminAppMenu({
       size={15}
       className="translate-x-[0.5px] translate-y-[0.5px]"
     />,
-    action: () => new Promise(resolve => {
-      if (startUpload) {
-        startUpload(() => resolve());
-      } else {
-        resolve();
-      }
-    }),
+    action: startUpload,
   }];
 
+  if (uploadsCount) {
+    items.push({
+      label: 'Uploads',
+      annotation: `${uploadsCount}`,
+      icon: <IconFolder
+        size={16}
+        className="translate-y-[0.5px]"
+      />,
+      href: PATH_ADMIN_UPLOADS,
+    });
+  }
   if (photosCountTotal) {
     items.push({
       label: 'Manage Photos',
@@ -81,19 +86,6 @@ export default function AdminAppMenu({
       href: PATH_ADMIN_PHOTOS,
     });
   }
-
-  if (uploadsCount) {
-    items.push({
-      label: 'Uploads',
-      annotation: `${uploadsCount}`,
-      icon: <IconFolder
-        size={16}
-        className="translate-y-[0.5px]"
-      />,
-      href: PATH_ADMIN_UPLOADS,
-    });
-  }
-
   if (tagsCount) {
     items.push({
       label: 'Manage Tags',
@@ -105,7 +97,6 @@ export default function AdminAppMenu({
       href: PATH_ADMIN_TAGS,
     });
   }
-
   if (recipesCount) {
     items.push({
       label: 'Manage Recipes',
@@ -117,13 +108,17 @@ export default function AdminAppMenu({
       href: PATH_ADMIN_RECIPES,
     });
   }
-
   if (photosCountTotal) {
     items.push({
       label: isSelecting
-        ? 'Exit Select'
-        : 'Edit Multiple',
-      icon: <IconSelectMultiple {...{ isSelecting }} />,
+        ? 'Exit Batch Edit'
+        : 'Batch Edit ...',
+      icon: isSelecting
+        ? <IoCloseSharp
+          size={18}
+          className="translate-x-[-1px] translate-y-[0.5px]"
+        />
+        : <IoMdCheckboxOutline size={17} className="translate-x-[-0.5px]" />,
       href: PATH_GRID_INFERRED,
       action: () => {
         if (isSelecting) {

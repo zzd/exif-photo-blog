@@ -1,34 +1,21 @@
 'use client';
 
-import { Tags } from '@/tag';
 import { Photo } from '.';
-import { Cameras } from '@/camera';
-import { FilmSimulations } from '@/simulation';
 import { PATH_GRID_INFERRED } from '@/app/paths';
 import PhotoGridSidebar from './PhotoGridSidebar';
 import PhotoGridContainer from './PhotoGridContainer';
 import { useEffect } from 'react';
 import { useAppState } from '@/state/AppState';
 import clsx from 'clsx/lite';
-import { Recipes } from '@/recipe';
-import { Lenses } from '@/lens';
+import { PhotoSetCategories } from '@/category';
 
 export default function PhotoGridPage({
   photos,
   photosCount,
-  cameras,
-  lenses,
-  tags,
-  simulations,
-  recipes,
-}: {
+  ...categories
+}: PhotoSetCategories & {
   photos: Photo[]
   photosCount: number
-  cameras: Cameras
-  lenses: Lenses
-  tags: Tags
-  simulations: FilmSimulations
-  recipes: Recipes
 }) {
   const { setSelectedPhotoIds } = useAppState();
 
@@ -36,17 +23,6 @@ export default function PhotoGridPage({
     () => () => setSelectedPhotoIds?.(undefined),
     [setSelectedPhotoIds],
   );
-
-  const renderGuard = (side: 'top' | 'bottom') =>
-    <div
-      className={clsx(
-        'absolute left-0 right-0',
-        side === 'top'
-          ? 'top-0 bg-linear-to-b from-white dark:from-black'
-          : 'bottom-0 bg-linear-to-t from-white dark:from-black',
-        'h-6 z-10 pointer-events-none',
-      )}
-    />;
 
   return (
     <PhotoGridContainer
@@ -59,23 +35,21 @@ export default function PhotoGridPage({
             'sticky top-0 -mb-5 -mt-5',
             'max-h-screen h-full',
           )}
+          style={{
+            // eslint-disable-next-line max-len
+            maskImage: 'linear-gradient(to bottom, transparent, black 24px, black calc(100% - 24px), transparent)',
+          }}
         >
-          {renderGuard('top')}
           <div className={clsx(
             'max-h-full overflow-y-auto [scrollbar-width:none]',
             'py-4',
           )}>
             <PhotoGridSidebar {...{
-              tags,
-              cameras,
-              lenses,
-              simulations,
-              recipes,
+              ...categories,
               photosCount,
             }}
             />
           </div>
-          {renderGuard('bottom')}
         </div>
       }
       canSelect

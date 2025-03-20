@@ -1,7 +1,5 @@
 import { INFINITE_SCROLL_GRID_INITIAL } from '@/photo';
 import { getUniqueRecipes } from '@/photo/db/query';
-import { IS_PRODUCTION } from '@/app/config';
-import { STATICALLY_OPTIMIZED_PHOTO_CATEGORIES } from '@/app/config';
 import { PATH_ROOT } from '@/app/paths';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -9,18 +7,16 @@ import { cache } from 'react';
 import { generateMetaForRecipe } from '@/recipe';
 import RecipeOverview from '@/recipe/RecipeOverview';
 import { getPhotosRecipeDataCached } from '@/recipe/data';
+import { staticallyGenerateCategoryIfConfigured } from '@/app/static';
 
 const getPhotosRecipeDataCachedCached = cache(getPhotosRecipeDataCached);
 
-export let generateStaticParams:
-  (() => Promise<{ recipe: string }[]>) | undefined = undefined;
-
-if (STATICALLY_OPTIMIZED_PHOTO_CATEGORIES && IS_PRODUCTION) {
-  generateStaticParams = async () => {
-    const recipes = await getUniqueRecipes();
-    return recipes.map(({ recipe }) => ({ recipe }));
-  };
-}
+export const generateStaticParams = staticallyGenerateCategoryIfConfigured(
+  'recipes',
+  'page',
+  getUniqueRecipes,
+  recipes => recipes.map(({ recipe }) => ({ recipe })),
+);
 
 interface RecipeProps {
   params: Promise<{ recipe: string }>

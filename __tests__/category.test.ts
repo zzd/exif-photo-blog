@@ -1,7 +1,7 @@
 import {
   DEFAULT_CATEGORY_KEYS,
   getOrderedCategoriesFromString,
-} from '@/photo/set';
+} from '@/category';
 
 describe('set', () => {
   it('parses from string', () => {

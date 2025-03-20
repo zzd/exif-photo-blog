@@ -6,32 +6,27 @@ import {
 import { getIBMPlexMono } from '@/app/font';
 import { ImageResponse } from 'next/og';
 import { getImageResponseCacheControlHeaders } from '@/image-response/cache';
-import { GENERATE_STATIC_PARAMS_LIMIT } from '@/photo/db';
 import { getUniqueLenses } from '@/photo/db/query';
 import {
-  STATICALLY_OPTIMIZED_PHOTO_CATEGORY_OG_IMAGES,
-  IS_PRODUCTION,
-} from '@/app/config';
-import { getLensFromParams, Lens, LensProps } from '@/lens';
+  getLensFromParams,
+  LensProps,
+  safelyGenerateLensStaticParams,
+} from '@/lens';
 import LensImageResponse from '@/image-response/LensImageResponse';
+import { staticallyGenerateCategoryIfConfigured } from '@/app/static';
 
-export let generateStaticParams:
-  (() => Promise<{ lens: Lens }[]>) | undefined = undefined;
-
-if (STATICALLY_OPTIMIZED_PHOTO_CATEGORY_OG_IMAGES && IS_PRODUCTION) {
-  generateStaticParams = async () => {
-    const lenses = await getUniqueLenses();
-    return lenses
-      .slice(0, GENERATE_STATIC_PARAMS_LIMIT)
-      .map(({ lens }) => ({ lens }));
-  };
-}
+export const generateStaticParams = staticallyGenerateCategoryIfConfigured(
+  'lenses',
+  'image',
+  getUniqueLenses,
+  safelyGenerateLensStaticParams,
+);
 
 export async function GET(
   _: Request,
   context: LensProps,
 ) {
-  const lens = getLensFromParams(await context.params);
+  const lens = await getLensFromParams(context.params);
 
   const [
     photos,

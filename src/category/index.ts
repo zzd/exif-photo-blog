@@ -1,6 +1,6 @@
-import { Photo } from '.';
+import { Photo } from '../photo';
 import { Camera, Cameras } from '@/camera';
-import { PhotoDateRange } from '.';
+import { PhotoDateRange } from '../photo';
 import { FilmSimulation, FilmSimulations } from '@/simulation';
 import { Lens, Lenses } from '@/lens';
 import { Tags } from '@/tag';
@@ -8,17 +8,17 @@ import { FocalLengths } from '@/focal';
 import { Recipes } from '@/recipe';
 
 const CATEGORY_KEYS = [
-  'tags',
   'cameras',
   'lenses',
+  'tags',
   'recipes',
   'films',
   'focal-lengths',
 ] as const;
 
-type CategoryKey = (typeof CATEGORY_KEYS)[number];
+export type CategoryKey = (typeof CATEGORY_KEYS)[number];
 
-type CategoryKeys = CategoryKey[];
+export type CategoryKeys = CategoryKey[];
 
 export const DEFAULT_CATEGORY_KEYS: CategoryKeys = [
   'tags',

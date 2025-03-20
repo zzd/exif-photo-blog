@@ -9,24 +9,15 @@ import { FilmSimulation } from '@/simulation';
 import { getIBMPlexMono } from '@/app/font';
 import { ImageResponse } from 'next/og';
 import { getImageResponseCacheControlHeaders } from '@/image-response/cache';
-import { GENERATE_STATIC_PARAMS_LIMIT } from '@/photo/db';
 import { getUniqueFilmSimulations } from '@/photo/db/query';
-import {
-  STATICALLY_OPTIMIZED_PHOTO_CATEGORY_OG_IMAGES,
-  IS_PRODUCTION,
-} from '@/app/config';
+import { staticallyGenerateCategoryIfConfigured } from '@/app/static';
 
-export let generateStaticParams:
-  (() => Promise<{ simulation: FilmSimulation }[]>) | undefined = undefined;
-
-if (STATICALLY_OPTIMIZED_PHOTO_CATEGORY_OG_IMAGES && IS_PRODUCTION) {
-  generateStaticParams = async () => {
-    const simulations = await getUniqueFilmSimulations();
-    return simulations
-      .slice(0, GENERATE_STATIC_PARAMS_LIMIT)
-      .map(({ simulation }) => ({ simulation }));
-  };
-}
+export const generateStaticParams = staticallyGenerateCategoryIfConfigured(
+  'films',
+  'image',
+  getUniqueFilmSimulations,
+  simulations => simulations.map(({ simulation }) => ({ simulation })),
+);
 
 export async function GET(
   _: Request,

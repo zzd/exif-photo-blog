@@ -1,6 +1,6 @@
 import { PRIORITY_ORDER_ENABLED } from '@/app/config';
 import { parameterize } from '@/utility/string';
-import { PhotoSetCategory } from '../set';
+import { PhotoSetCategory } from '../../category';
 import { Camera } from '@/camera';
 import { Lens } from '@/lens';
 
@@ -100,6 +100,8 @@ export const getWheresFromOptions = (
   }
   if (lens?.model) {
     wheres.push(`${parameterizeForDb('lens_model')}=$${valuesIndex++}`);
+    // Ensure unique queries for lenses missing makes
+    if (!lens.make) { wheres.push('lens_make IS NULL'); }
     wheresValues.push(parameterize(lens.model));
   }
   if (tag) {
