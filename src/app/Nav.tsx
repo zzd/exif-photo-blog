@@ -67,8 +67,9 @@ export default function Nav({
   return (
     <AppGrid
       className={clsx(
-        isNavSticky && 'sticky top-0 z-10',
+        isNavSticky && 'sticky top-0 z-10 pointer-events-none',
       )}
+      classNameMain='pointer-events-auto'
       contentMain={
         <AnimateItems
           animateOnFirstLoadOnly
@@ -79,8 +80,10 @@ export default function Nav({
               key="nav"
               ref={ref}
               className={clsx(
-                'flex items-center w-full',
-                'bg-main',
+                'w-full',
+                // Enlarge nav to ensure it fully masks underlying content
+                'md:w-[calc(100%+8px)] md:translate-x-[-4px] md:px-[4px]',
+                'flex items-center bg-main',
                 shouldAnimateStickyNav && 'transition-transform duration-200',
                 shouldHideStickyNav
                   ? 'translate-y-[-100%]'

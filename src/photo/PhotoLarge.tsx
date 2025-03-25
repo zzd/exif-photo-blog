@@ -6,6 +6,7 @@ import {
   doesPhotoNeedBlurCompatibility,
   shouldShowCameraDataForPhoto,
   shouldShowExifDataForPhoto,
+  shouldShowFilmSimulationDataForPhoto,
   shouldShowLensDataForPhoto,
   shouldShowRecipeDataForPhoto,
   titleForPhoto,
@@ -134,9 +135,11 @@ export default function PhotoLarge({
 
   const showCameraContent = showCamera && shouldShowCameraDataForPhoto(photo);
   const showLensContent = showLens && shouldShowLensDataForPhoto(photo);
+  const showTagsContent = tags.length > 0;
   const showRecipeContent = showRecipe && shouldShowRecipeDataForPhoto(photo);
   const showRecipeButton = shouldShowRecipeDataForPhoto(photo);
-  const showTagsContent = tags.length > 0;
+  const showSimulationContent = showSimulation &&
+    shouldShowFilmSimulationDataForPhoto(photo);
 
   useVisible({ ref, onVisible });
 
@@ -153,6 +156,7 @@ export default function PhotoLarge({
     showLensContent ||
     showTagsContent ||
     showRecipeContent ||
+    showSimulationContent ||
     showExifContent;
 
   const hasNonDateContent =
@@ -252,20 +256,18 @@ export default function PhotoLarge({
           'pb-6',
         )}>
           {/* Meta */}
-          <div className="pr-2 md:pr-0">
-            <div className="md:relative flex gap-2 items-start">
-              {hasTitle && (showTitleAsH1
-                ? <h1>{renderPhotoLink}</h1>
-                : renderPhotoLink)}
-              <div className="absolute right-0 translate-y-[-4px] z-10">
-                <AdminPhotoMenuClient {...{
-                  photo,
-                  revalidatePhoto,
-                  includeFavorite: includeFavoriteInAdminMenu,
-                  ariaLabel: `Admin menu for '${titleForPhoto(photo)}' photo`,
-                }} />
-              </div>
+          <div>
+            <div className="float-right translate-y-[-4px]">
+              <AdminPhotoMenuClient {...{
+                photo,
+                revalidatePhoto,
+                includeFavorite: includeFavoriteInAdminMenu,
+                ariaLabel: `Admin menu for '${titleForPhoto(photo)}' photo`,
+              }} />
             </div>
+            {hasTitle && (showTitleAsH1
+              ? <h1>{renderPhotoLink}</h1>
+              : renderPhotoLink)}
             <div className="space-y-baseline">
               {photo.caption &&
                 <div className={clsx(
@@ -358,9 +360,9 @@ export default function PhotoLarge({
                   <li>{photo.isoFormatted}</li>
                   <li>{photo.exposureCompensationFormatted ?? '0ev'}</li>
                 </ul>
-                {(showSimulation || showRecipeButton) &&
+                {(showRecipeButton || showSimulationContent) &&
                   <div className="flex items-center gap-2 *:w-auto">
-                    {showSimulation && photo.filmSimulation &&
+                    {showSimulationContent && photo.filmSimulation &&
                       <PhotoFilmSimulation
                         simulation={photo.filmSimulation}
                         prefetch={prefetchRelatedLinks}
