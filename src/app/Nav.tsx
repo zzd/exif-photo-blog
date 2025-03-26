@@ -10,39 +10,36 @@ import {
   isPathAdmin,
   isPathFeed,
   isPathGrid,
-  isPathTopLevel,
   isPathProtected,
   isPathSignIn,
 } from '@/app/paths';
 import AnimateItems from '../components/AnimateItems';
 import {
   GRID_HOMEPAGE_ENABLED,
-  HAS_DEFINED_SITE_DESCRIPTION,
-  SITE_DESCRIPTION,
+  NAV_CAPTION,
 } from './config';
 import { useRef } from 'react';
 import useStickyNav from './useStickyNav';
 
-const NAV_HEIGHT_CLASS = HAS_DEFINED_SITE_DESCRIPTION
+const NAV_HEIGHT_CLASS = NAV_CAPTION
   ? 'min-h-[4rem] sm:min-h-[5rem]'
   : 'min-h-[4rem]';
 
 export default function Nav({
-  siteDomainOrTitle,
+  navTitleOrDomain,
 }: {
-  siteDomainOrTitle: string;
+  navTitleOrDomain: string;
 }) {
   const ref = useRef<HTMLElement>(null);
 
   const pathname = usePathname();
   const showNav = !isPathSignIn(pathname);
-  const isHome = isPathTopLevel(pathname);
 
   const {
     isNavSticky,
     shouldHideStickyNav,
     shouldAnimateStickyNav,
-  } = useStickyNav(ref, isHome);
+  } = useStickyNav(ref);
 
   const renderLink = (
     text: string,
@@ -100,16 +97,16 @@ export default function Nav({
               )}>
                 <div className={clsx(
                   'truncate overflow-hidden select-none',
-                  HAS_DEFINED_SITE_DESCRIPTION && 'sm:font-bold',
+                  NAV_CAPTION && 'sm:font-bold',
                 )}>
-                  {renderLink(siteDomainOrTitle, PATH_ROOT)}
+                  {renderLink(navTitleOrDomain, PATH_ROOT)}
                 </div>
-                {HAS_DEFINED_SITE_DESCRIPTION &&
+                {NAV_CAPTION &&
                   <div className={clsx(
                     'hidden sm:block truncate overflow-hidden',
                     'leading-tight',
                   )}>
-                    {SITE_DESCRIPTION}
+                    {NAV_CAPTION}
                   </div>}
               </div>
             </nav>]
