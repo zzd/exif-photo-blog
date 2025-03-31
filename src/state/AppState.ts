@@ -2,7 +2,7 @@ import {
   Dispatch,
   SetStateAction,
   createContext,
-  useContext,
+  use,
   RefObject,
 } from 'react';
 import { AnimationConfig } from '@/components/AnimateItems';
@@ -11,8 +11,9 @@ import { InsightsIndicatorStatus } from '@/admin/insights';
 import { INITIAL_UPLOAD_STATE, UploadState } from '@/admin/upload';
 import { AdminData } from '@/admin/actions';
 import { RecipeProps } from '@/recipe';
+import { getCountsForCategoriesCachedAction } from '@/category/actions';
 
-export type AppStateContext = {
+export type AppStateContextType = {
   // CORE
   previousPathname?: string
   hasLoaded?: boolean
@@ -24,6 +25,8 @@ export type AppStateContext = {
   clearNextPhotoAnimation?: () => void
   shouldRespondToKeyboardCommands?: boolean
   setShouldRespondToKeyboardCommands?: Dispatch<SetStateAction<boolean>>
+  categoriesWithCounts?:
+    Awaited<ReturnType<typeof getCountsForCategoriesCachedAction>>
   // MODAL
   isCommandKOpen?: boolean
   setIsCommandKOpen?: Dispatch<SetStateAction<boolean>>
@@ -71,8 +74,8 @@ export type AppStateContext = {
   setShouldDebugRecipeOverlays?: Dispatch<SetStateAction<boolean>>
 } & Partial<AdminData>
 
-export const AppStateContext = createContext<AppStateContext>({
+export const AppStateContext = createContext<AppStateContextType>({
   uploadState: INITIAL_UPLOAD_STATE,
 });
 
-export const useAppState = () => useContext(AppStateContext);
+export const useAppState = () => use(AppStateContext);

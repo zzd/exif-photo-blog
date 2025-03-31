@@ -232,16 +232,24 @@ export const DEFAULT_THEME =
       : 'system';
 export const MATTE_PHOTOS =
   process.env.NEXT_PUBLIC_MATTE_PHOTOS === '1';
+export const MATTE_COLOR =
+  process.env.NEXT_PUBLIC_MATTE_COLOR;
+export const MATTE_COLOR_DARK =
+  process.env.NEXT_PUBLIC_MATTE_COLOR_DARK;
 
 // DISPLAY
 
 export const CATEGORY_VISIBILITY = getOrderedCategoriesFromString(
   process.env.NEXT_PUBLIC_CATEGORY_VISIBILITY);
+export const SHOW_CAMERAS =
+  CATEGORY_VISIBILITY.includes('cameras');
 export const SHOW_LENSES =
   CATEGORY_VISIBILITY.includes('lenses');
+export const SHOW_TAGS =
+  CATEGORY_VISIBILITY.includes('tags');
 export const SHOW_RECIPES =
   CATEGORY_VISIBILITY.includes('recipes');
-export const SHOW_FILM_SIMULATIONS =
+export const SHOW_FILMS =
   CATEGORY_VISIBILITY.includes('films');
 export const SHOW_FOCAL_LENGTHS =
   CATEGORY_VISIBILITY.includes('focal-lengths');
@@ -350,6 +358,8 @@ export const APP_CONFIGURATION = {
   hasDefaultTheme: Boolean(process.env.NEXT_PUBLIC_DEFAULT_THEME),
   defaultTheme: DEFAULT_THEME,
   arePhotosMatted: MATTE_PHOTOS,
+  matteColor: MATTE_COLOR,
+  matteColorDark: MATTE_COLOR_DARK,
   // Display
   hasCategoryVisibility:
     Boolean(process.env.NEXT_PUBLIC_CATEGORY_VISIBILITY),
