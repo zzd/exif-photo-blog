@@ -12,12 +12,13 @@ export const isCameraApple = ({ make }: Camera) =>
 export const isLensMakeApple = (make?: string) =>
   make?.toLocaleLowerCase() === MAKE_APPLE;
 
-export const isLensApple = ({ make }: Lens) =>
-  isLensMakeApple(make);
+export const isLensApple = ({ make, model }: Lens) =>
+  isLensMakeApple(make) ||
+  /^iPhone [0-9a-z]{1,3}/i.test(model);
 
 export const formatAppleLensText = (
   model: string,
-  includePhoneName?: boolean,
+  includeDeviceName?: boolean,
 ) => {
   const [
     _,
@@ -30,11 +31,11 @@ export const formatAppleLensText = (
 
   const format = (lensName: string, includeFocalLength = true) => {
     let result = '';
-    if (includePhoneName) {
+    if (includeDeviceName) {
       result += `${phoneName} `;
     }
     result += lensName;
-    if (!includePhoneName) {
+    if (!includeDeviceName) {
       result += ' Camera';
     }
     if (includeFocalLength && focalLength) {

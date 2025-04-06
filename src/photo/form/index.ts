@@ -1,29 +1,18 @@
-import type { ExifData } from 'ts-exif-parser';
-import { DEFAULT_ASPECT_RATIO, Photo, PhotoDbInsert, PhotoExif } from '..';
+import { DEFAULT_ASPECT_RATIO, Photo, PhotoDbInsert } from '..';
 import {
-  convertTimestampToNaivePostgresString,
-  convertTimestampWithOffsetToPostgresString,
   generateLocalNaivePostgresString,
   generateLocalPostgresString,
   validationMessageNaivePostgresDateString,
   validationMessagePostgresDateString,
 } from '@/utility/date';
-import {
-  convertApertureValueToFNumber,
-  getAspectRatioFromExif,
-  getOffsetFromExif,
-} from '@/utility/exif';
 import { roundToNumber } from '@/utility/number';
 import { convertStringToArray, parameterize } from '@/utility/string';
 import { generateNanoid } from '@/utility/nanoid';
-import {
-  FILM_SIMULATION_FORM_INPUT_OPTIONS,
-} from '@/platforms/fujifilm/simulation';
-import { FilmSimulation } from '@/film';
-import { GEO_PRIVACY_ENABLED } from '@/app/config';
 import { TAG_FAVS, getValidationMessageForTags } from '@/tag';
 import { MAKE_FUJIFILM } from '@/platforms/fujifilm';
 import { FujifilmRecipe } from '@/platforms/fujifilm/recipe';
+import { ReactNode } from 'react';
+import { FujifilmSimulation } from '@/platforms/fujifilm/simulation';
 
 type VirtualFields =
   'favorite' |
@@ -44,6 +33,8 @@ export type FieldSetType =
 
 export type AnnotatedTag = {
   value: string,
+  label?: string,
+  icon?: ReactNode
   annotation?: string,
   annotationAria?: string,
 };
@@ -51,6 +42,7 @@ export type AnnotatedTag = {
 export type FormMeta = {
   label: string
   note?: string
+  noteShort?: string
   required?: boolean
   excludeFromInsert?: boolean
   readOnly?: boolean
@@ -82,6 +74,7 @@ const STRING_MAX_LENGTH_LONG  = 1000;
 const FORM_METADATA = (
   tagOptions?: AnnotatedTag[],
   recipeOptions?: AnnotatedTag[],
+  filmOptions?: AnnotatedTag[],
   aiTextGeneration?: boolean,
   shouldStripGpsData?: boolean,
 ): Record<keyof PhotoFormData, FormMeta> => ({
@@ -121,16 +114,16 @@ const FORM_METADATA = (
   model: { label: 'camera model' },
   film: {
     label: 'film',
-    selectOptions: FILM_SIMULATION_FORM_INPUT_OPTIONS,
-    selectOptionsDefaultLabel: 'Unknown',
-    shouldHide: ({ make }) => make !== MAKE_FUJIFILM,
+    note: 'Intended for Fujifilm cameras and analog scans',
+    noteShort: 'Fujifilm cameras / analog scans',
+    tagOptions: filmOptions,
+    tagOptionsLimit: 1,
     shouldNotOverwriteWithNullDataOnSync: true,
   },
   recipeTitle: {
     label: 'recipe title',
     tagOptions: recipeOptions,
     tagOptionsLimit: 1,
-    tagOptionsLimitValidationMessage: 'Photos can only have one recipe',
     spellCheck: false,
     capitalize: false,
     shouldHide: ({ make }) => make !== MAKE_FUJIFILM,
@@ -270,46 +263,6 @@ export const convertPhotoToFormData = (photo: Photo): PhotoFormData => {
   } as PhotoFormData);
 };
 
-// CREATE FORM DATA: FROM EXIF
-
-export const convertExifToFormData = (
-  data: ExifData,
-  film?: FilmSimulation,
-  recipeData?: FujifilmRecipe,
-): Omit<
-  Record<keyof PhotoExif, string | undefined>,
-  'takenAt' | 'takenAtNaive'
-> => ({
-  aspectRatio: getAspectRatioFromExif(data).toString(),
-  make: data.tags?.Make,
-  model: data.tags?.Model,
-  focalLength: data.tags?.FocalLength?.toString(),
-  focalLengthIn35MmFormat: data.tags?.FocalLengthIn35mmFormat?.toString(),
-  lensMake: data.tags?.LensMake,
-  lensModel: data.tags?.LensModel,
-  fNumber: (
-    data.tags?.FNumber?.toString() ||
-    convertApertureValueToFNumber(data.tags?.ApertureValue)
-  ),
-  iso: data.tags?.ISO?.toString() || data.tags?.ISOSpeed?.toString(),
-  exposureTime: data.tags?.ExposureTime?.toString(),
-  exposureCompensation: data.tags?.ExposureCompensation?.toString(),
-  latitude:
-    !GEO_PRIVACY_ENABLED ? data.tags?.GPSLatitude?.toString() : undefined,
-  longitude:
-    !GEO_PRIVACY_ENABLED ? data.tags?.GPSLongitude?.toString() : undefined,
-  film,
-  recipeData: JSON.stringify(recipeData),
-  ...data.tags?.DateTimeOriginal && {
-    takenAt: convertTimestampWithOffsetToPostgresString(
-      data.tags.DateTimeOriginal,
-      getOffsetFromExif(data),
-    ),
-    takenAtNaive:
-      convertTimestampToNaivePostgresString(data.tags.DateTimeOriginal),
-  },
-});
-
 // PREPARE FORM FOR DB INSERT
 
 export const convertFormDataToPhotoDbInsert = (
@@ -345,7 +298,7 @@ export const convertFormDataToPhotoDbInsert = (
 
   return {
     ...(photoForm as PhotoFormData & {
-      film?: FilmSimulation
+      film?: FujifilmSimulation
       recipeData?: FujifilmRecipe
     }),
     ...!photoForm.id && { id: generateNanoid() },

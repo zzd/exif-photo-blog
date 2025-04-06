@@ -41,9 +41,11 @@ import ErrorNote from '@/components/ErrorNote';
 import { convertRecipesForForm, Recipes } from '@/recipe';
 import deepEqual from 'fast-deep-equal/es6/react';
 import ApplyRecipeTitleGloballyCheckbox from './ApplyRecipesGloballyCheckbox';
-import { FilmSimulation } from '@/film';
-import IconFavs from '@/components/icons/IconFavs';
-import IconHidden from '@/components/icons/IconHidden';
+import { convertFilmsForForm, Films } from '@/film';
+import { isMakeFujifilm } from '@/platforms/fujifilm';
+import PhotoFilmIcon from '@/film/PhotoFilmIcon';
+import FieldsetFavs from './FieldsetFavs';
+import FieldsetHidden from './FieldsetHidden';
 
 const THUMBNAIL_SIZE = 300;
 
@@ -54,6 +56,7 @@ export default function PhotoForm({
   updatedBlurData,
   uniqueTags,
   uniqueRecipes,
+  uniqueFilms,
   aiContent,
   shouldStripGpsData,
   onTitleChange,
@@ -66,6 +69,7 @@ export default function PhotoForm({
   updatedBlurData?: string
   uniqueTags?: Tags
   uniqueRecipes?: Recipes
+  uniqueFilms?: Films
   aiContent?: AiContent
   shouldStripGpsData?: boolean
   onTitleChange?: (updatedTitle: string) => void
@@ -326,12 +330,14 @@ export default function PhotoForm({
           {FORM_METADATA_ENTRIES(
             convertTagsForForm(uniqueTags),
             convertRecipesForForm(uniqueRecipes),
+            convertFilmsForForm(uniqueFilms, isMakeFujifilm(formData.make)),
             aiContent !== undefined,
             shouldStripGpsData,
           )
             .map(([key, {
               label,
               note,
+              noteShort,
               required,
               selectOptions,
               selectOptionsDefaultLabel,
@@ -359,6 +365,7 @@ export default function PhotoForm({
                       : ''
                   ),
                   note,
+                  noteShort,
                   error: formErrors[key],
                   value: staticValue ?? formData[key] ?? '',
                   isModified: (
@@ -406,6 +413,16 @@ export default function PhotoForm({
                 };
 
                 switch (key) {
+                case 'film':
+                  return <FieldSetWithStatus
+                    key={key}
+                    tagOptionsDefaultIcon={<span
+                      className="w-4 overflow-hidden"
+                    >
+                      <PhotoFilmIcon />
+                    </span>}
+                    {...fieldProps}
+                  />;
                 case 'applyRecipeTitleGlobally':
                   return <ApplyRecipeTitleGloballyCheckbox
                     key={key}
@@ -414,23 +431,18 @@ export default function PhotoForm({
                     hasRecipeTitleChanged={
                       changedFormKeys.includes('recipeTitle')}
                     recipeData={formData.recipeData}
-                    film={formData.film as FilmSimulation}
+                    film={formData.film}
                     onMatchResults={onMatchResults}
                     {...fieldProps}
                   />;
                 case 'favorite':
-                  return <FieldSetWithStatus
+                  return <FieldsetFavs
                     key={key}
-                    icon={<IconFavs
-                      size={14}
-                      highlight={formData[key] === 'true'}
-                    />}
                     {...fieldProps}
                   />;
                 case 'hidden':
-                  return <FieldSetWithStatus
+                  return <FieldsetHidden
                     key={key}
-                    icon={<IconHidden size={16} />}
                     {...fieldProps}
                   />;
                 default:

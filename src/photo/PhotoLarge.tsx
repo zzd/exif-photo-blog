@@ -229,7 +229,7 @@ export default function PhotoLarge({
               <PhotoRecipeOverlay
                 ref={refRecipe}
                 title={photo.recipeTitle}
-                recipe={photo.recipeData}
+                data={photo.recipeData}
                 film={photo.film}
                 iso={photo.isoFormatted}
                 exposure={photo.exposureCompensationFormatted}
@@ -308,7 +308,7 @@ export default function PhotoLarge({
                   ) &&
                     <div>
                       {(showCameraContent || showLensContent) &&
-                        <div className="flex flex-col">
+                        <div className="flex flex-col *:self-start">
                           {showCameraContent &&
                             <PhotoCamera
                               camera={camera}

@@ -21,8 +21,9 @@ export type AppStateContextType = {
   swrTimestamp?: number
   invalidateSwr?: () => void
   nextPhotoAnimation?: AnimationConfig
-  setNextPhotoAnimation?: Dispatch<SetStateAction<AnimationConfig | undefined>>
-  clearNextPhotoAnimation?: () => void
+  setNextPhotoAnimation?: (animationConfig?: AnimationConfig) => void
+  getNextPhotoAnimationId?: () => string
+  clearNextPhotoAnimation?: (id?: string) => void
   shouldRespondToKeyboardCommands?: boolean
   setShouldRespondToKeyboardCommands?: Dispatch<SetStateAction<boolean>>
   categoriesWithCounts?:
@@ -39,11 +40,13 @@ export type AppStateContextType = {
   setUserEmail?: Dispatch<SetStateAction<string | undefined>>
   isUserSignedIn?: boolean
   isUserSignedInEager?: boolean
-  clearAuthStateAndRedirect?: () => void
+  clearAuthStateAndRedirectIfNecessary?: () => void
   // ADMIN
   isCheckingAuth?: boolean
   adminUpdateTimes?: Date[]
   registerAdminUpdate?: () => void
+  hasAdminData?: boolean
+  isLoadingAdminData?: boolean
   refreshAdminData?: () => void
   updateAdminData?: (updatedData: Partial<AdminData>) => void
   selectedPhotoIds?: string[]

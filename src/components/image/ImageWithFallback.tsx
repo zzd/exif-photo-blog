@@ -71,31 +71,6 @@ export default function ImageWithFallback(props: ImageProps & {
         className,
       )}
     >
-      {(showFallback || shouldDebugImageFallbacks) &&
-        <div className={clsx(
-          '@container',
-          'absolute inset-0',
-          'overflow-hidden',
-          'transition-opacity duration-300 ease-in',
-          !(BLUR_ENABLED && blurDataURL) && 'bg-main',
-          (isLoading || shouldDebugImageFallbacks)
-            ? 'opacity-100'
-            : 'opacity-0',
-        )}>
-          {(BLUR_ENABLED && blurDataURL)
-            ? <img {...{
-              ...rest,
-              src: blurDataURL,
-              className: clsx(
-                getBlurClass(),
-                classNameImage,
-              ),
-            }} />
-            :  <div className={clsx(
-              'w-full h-full',
-              'bg-gray-100/50 dark:bg-gray-900/50',
-            )} />}
-        </div>}
       <Image {...{
         ...rest,
         ref: imgRef,
@@ -104,6 +79,31 @@ export default function ImageWithFallback(props: ImageProps & {
         onLoad,
         onError,
       }} />
+      <div className={clsx(
+        '@container',
+        'absolute inset-0',
+        'overflow-hidden',
+        (showFallback || shouldDebugImageFallbacks) &&
+          'transition-opacity duration-300 ease-in',
+        !(BLUR_ENABLED && blurDataURL) && 'bg-main',
+        (isLoading || shouldDebugImageFallbacks)
+          ? 'opacity-100'
+          : 'opacity-0',
+      )}>
+        {(BLUR_ENABLED && blurDataURL)
+          ? <img {...{
+            ...rest,
+            src: blurDataURL,
+            className: clsx(
+              getBlurClass(),
+              classNameImage,
+            ),
+          }} />
+          :  <div className={clsx(
+            'w-full h-full',
+            'bg-gray-100/50 dark:bg-gray-900/50',
+          )} />}
+      </div>
     </div>
   );
 }

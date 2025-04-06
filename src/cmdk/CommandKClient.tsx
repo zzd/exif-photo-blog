@@ -59,7 +59,6 @@ import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import InsightsIndicatorDot from '@/admin/insights/InsightsIndicatorDot';
 import { PhotoSetCategories } from '@/category';
 import { formatCameraText } from '@/camera';
-import { labelForFilm } from '@/platforms/fujifilm/simulation';
 import { formatFocalLength } from '@/focal';
 import { formatRecipe } from '@/recipe';
 import IconLens from '../components/icons/IconLens';
@@ -73,6 +72,7 @@ import IconFilm from '../components/icons/IconFilm';
 import IconLock from '../components/icons/IconLock';
 import useVisualViewportHeight from '@/utility/useVisualViewport';
 import useMaskedScroll from '../components/useMaskedScroll';
+import { labelForFilm } from '@/film';
 
 const DIALOG_TITLE = 'Global Command-K Menu';
 const DIALOG_DESCRIPTION = 'For searching photos, views, and settings';
@@ -124,9 +124,10 @@ export default function CommandKClient({
 
   const {
     isUserSignedIn,
-    clearAuthStateAndRedirect,
+    clearAuthStateAndRedirectIfNecessary,
     isCommandKOpen: isOpen,
     startUpload,
+    photosCountTotal,
     photosCountHidden,
     uploadsCount,
     tagsCount,
@@ -465,20 +466,20 @@ export default function CommandKClient({
       });
     }
     adminSection.items.push({
-      label: 'Manage Photos',
+      label: `Manage Photos (${photosCountTotal})`,
       annotation: <IconLock narrow />,
       path: PATH_ADMIN_PHOTOS,
     });
     if (tagsCount) {
       adminSection.items.push({
-        label: 'Manage Tags',
+        label: `Manage Tags (${tagsCount})`,
         annotation: <IconLock narrow />,
         path: PATH_ADMIN_TAGS,
       });
     }
     if (recipesCount) {
       adminSection.items.push({
-        label: 'Manage Recipes',
+        label: `Manage Recipes (${recipesCount})`,
         annotation: <IconLock narrow />,
         path: PATH_ADMIN_RECIPES,
       });
@@ -521,7 +522,9 @@ export default function CommandKClient({
     }
     adminSection.items.push({
       label: 'Sign Out',
-      action: () => signOutAction().then(clearAuthStateAndRedirect),
+      action: () => signOutAction()
+        .then(clearAuthStateAndRedirectIfNecessary)
+        .then(() => setIsOpen?.(false)),
     });
   } else {
     adminSection.items.push({
@@ -545,6 +548,7 @@ export default function CommandKClient({
     >
       <Modal
         anchor='top'
+        className="rounded-lg!"
         onClose={() => setIsOpen?.(false)}
         noPadding
         fast

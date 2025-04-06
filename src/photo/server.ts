@@ -2,22 +2,19 @@ import {
   getExtensionFromStorageUrl,
   getIdFromStorageUrl,
 } from '@/platforms/storage';
+import { convertFormDataToPhotoDbInsert } from '@/photo/form';
 import {
-  convertExifToFormData,
-  convertFormDataToPhotoDbInsert,
-} from '@/photo/form';
-import {
+  FujifilmSimulation,
   getFujifilmSimulationFromMakerNote,
 } from '@/platforms/fujifilm/simulation';
 import { ExifData, ExifParserFactory } from 'ts-exif-parser';
 import { PhotoFormData } from './form';
-import { FilmSimulation } from '@/film';
 import sharp, { Sharp } from 'sharp';
 import {
   GEO_PRIVACY_ENABLED,
   PRESERVE_ORIGINAL_UPLOADS,
 } from '@/app/config';
-import { isExifForFujifilm } from '@/platforms/fujifilm';
+import { isExifForFujifilm } from '@/platforms/fujifilm/server';
 import {
   FujifilmRecipe,
   getFujifilmRecipeFromMakerNote,
@@ -27,6 +24,8 @@ import {
   updateAllMatchingRecipeTitles,
 } from './db/query';
 import { PhotoDbInsert } from '.';
+import { convertExifToFormData } from './form/server';
+
 const IMAGE_WIDTH_RESIZE = 200;
 const IMAGE_WIDTH_BLUR = 200;
 
@@ -58,7 +57,7 @@ export const extractImageDataFromBlobPath = async (
   const extension = getExtensionFromStorageUrl(url);
 
   let exifData: ExifData | undefined;
-  let film: FilmSimulation | undefined;
+  let film: FujifilmSimulation | undefined;
   let recipe: FujifilmRecipe | undefined;
   let blurData: string | undefined;
   let imageResizedBase64: string | undefined;
@@ -124,7 +123,7 @@ export const extractImageDataFromBlobPath = async (
           url,
         },
         ...generateBlurData && { blurData },
-        ...convertExifToFormData(exifData, film, recipe),
+        ...convertExifToFormData (exifData, film, recipe),
       },
     },
     imageResizedBase64,

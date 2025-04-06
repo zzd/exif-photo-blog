@@ -19,12 +19,13 @@ import {
   storeAuthEmailCookie,
   clearAuthEmailCookie,
   hasAuthEmailCookie,
-} from '@/auth/client';
+} from '@/auth';
 import { useRouter, usePathname } from 'next/navigation';
-import { isPathAdmin, PATH_SIGN_IN } from '@/app/paths';
+import { isPathAdmin, PATH_ROOT } from '@/app/paths';
 import { INITIAL_UPLOAD_STATE, UploadState } from '@/admin/upload';
 import { RecipeProps } from '@/recipe';
 import { getCountsForCategoriesCachedAction } from '@/category/actions';
+import { nanoid } from 'nanoid';
 
 export default function AppStateProvider({
   children,
@@ -42,8 +43,25 @@ export default function AppStateProvider({
     useState(false);
   const [swrTimestamp, setSwrTimestamp] =
     useState(Date.now());
-  const [nextPhotoAnimation, setNextPhotoAnimation] =
+  const [nextPhotoAnimation, _setNextPhotoAnimation] =
     useState<AnimationConfig>();
+  const setNextPhotoAnimation = useCallback((animation?: AnimationConfig) => {
+    _setNextPhotoAnimation(animation);
+    setNextPhotoAnimationId(undefined);
+  }, []);
+  const [nextPhotoAnimationId, setNextPhotoAnimationId] =
+    useState<string>();
+  const getNextPhotoAnimationId = useCallback(() => {
+    const id = nanoid();
+    setNextPhotoAnimationId(id);
+    return id;
+  }, []);
+  const clearNextPhotoAnimation = useCallback((id?: string) => {
+    if (id === nextPhotoAnimationId) {
+      setNextPhotoAnimation(undefined);
+      setNextPhotoAnimationId(undefined);
+    }
+  }, [nextPhotoAnimationId, setNextPhotoAnimation]);
   const [shouldRespondToKeyboardCommands, setShouldRespondToKeyboardCommands] =
     useState(true);
   // MODAL
@@ -105,11 +123,17 @@ export default function AppStateProvider({
     setIsUserSignedInEager(hasAuthEmailCookie());
     if (!authError) {
       setUserEmail(auth?.user?.email ?? undefined);
+    } else {
+      setIsUserSignedInEager(false);
     }
   }, [auth, authError]);
   const isUserSignedIn = Boolean(userEmail);
 
-  const { data: adminData, mutate: refreshAdminData } = useSWR(
+  const {
+    data: adminData,
+    mutate: refreshAdminData,
+    isLoading: isLoadingAdminData,
+  } = useSWR(
     isUserSignedIn ? 'getAdminData' : null,
     getAdminDataAction,
   );
@@ -133,11 +157,11 @@ export default function AppStateProvider({
     setAdminUpdateTimes(updates => [...updates, new Date()])
   , []);
 
-  const clearAuthStateAndRedirect = useCallback(() => {
+  const clearAuthStateAndRedirectIfNecessary = useCallback(() => {
     setUserEmail(undefined);
     setIsUserSignedInEager(false);
     clearAuthEmailCookie();
-    if (isPathAdmin(pathname)) { router.push(PATH_SIGN_IN); }
+    if (isPathAdmin(pathname)) { router.push(PATH_ROOT); }
   }, [router, pathname]);
 
   // Returns false when upload is cancelled
@@ -170,7 +194,8 @@ export default function AppStateProvider({
         invalidateSwr,
         nextPhotoAnimation,
         setNextPhotoAnimation,
-        clearNextPhotoAnimation: () => setNextPhotoAnimation?.(undefined),
+        getNextPhotoAnimationId,
+        clearNextPhotoAnimation,
         shouldRespondToKeyboardCommands,
         setShouldRespondToKeyboardCommands,
         categoriesWithCounts,
@@ -187,13 +212,15 @@ export default function AppStateProvider({
         setUserEmail,
         isUserSignedIn,
         isUserSignedInEager,
-        clearAuthStateAndRedirect,
+        clearAuthStateAndRedirectIfNecessary,
         // ADMIN
         adminUpdateTimes,
         registerAdminUpdate,
+        ...adminData,
+        hasAdminData: Boolean(adminData),
+        isLoadingAdminData,
         refreshAdminData,
         updateAdminData,
-        ...adminData,
         selectedPhotoIds,
         setSelectedPhotoIds,
         isPerformingSelectEdit,

@@ -46,7 +46,7 @@ import {
 } from './server';
 import { TAG_FAVS, isTagFavs } from '@/tag';
 import { convertPhotoToPhotoDbInsert, Photo } from '.';
-import { runAuthenticatedAdminServerAction } from '@/auth';
+import { runAuthenticatedAdminServerAction } from '@/auth/server';
 import { AiImageQuery, getAiImageQuery } from './ai';
 import { streamOpenAiImageQuery } from '@/platforms/openai';
 import {
@@ -60,7 +60,6 @@ import { convertUploadToPhoto } from './storage';
 import { UrlAddStatus } from '@/admin/AdminUploadsClient';
 import { convertStringToArray } from '@/utility/string';
 import { after } from 'next/server';
-import { FilmSimulation } from '@/film';
 
 // Private actions
 
@@ -315,7 +314,7 @@ export const renamePhotoTagGloballyAction = async (formData: FormData) =>
 
 export const getPhotosNeedingRecipeTitleCountAction = async (
   recipeData: string,
-  film: FilmSimulation,
+  film: string,
   photoIdToExclude?: string,
 ) =>
   runAuthenticatedAdminServerAction(async () =>
