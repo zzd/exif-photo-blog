@@ -34,7 +34,7 @@ import {
 } from '@/app/config';
 import AdminPhotoMenu from '@/admin/AdminPhotoMenu';
 import { RevalidatePhoto } from './InfinitePhotoScroll';
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import useVisible from '@/utility/useVisible';
 import PhotoDate from './PhotoDate';
 import { useAppState } from '@/state/AppState';
@@ -42,8 +42,6 @@ import { LuExpand } from 'react-icons/lu';
 import LoaderButton from '@/components/primitives/LoaderButton';
 import Tooltip from '@/components/Tooltip';
 import ZoomControls, { ZoomControlsRef } from '@/components/image/ZoomControls';
-import { TbChecklist } from 'react-icons/tb';
-import { IoCloseSharp } from 'react-icons/io5';
 import { AnimatePresence } from 'framer-motion';
 import useRecipeOverlay from '../recipe/useRecipeOverlay';
 import PhotoRecipeOverlay from '@/recipe/PhotoRecipeOverlay';
@@ -67,7 +65,7 @@ export default function PhotoLarge({
   showLens = true,
   showFilm = true,
   showRecipe = true,
-  showZoomControls: showZoomControlsProp = true,
+  showZoomControls: _showZoomControls = true,
   shouldZoomOnFKeydown = true,
   shouldShare = true,
   shouldShareCamera,
@@ -105,8 +103,8 @@ export default function PhotoLarge({
   onVisible?: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null);
-
-  const zoomControlsRef = useRef<ZoomControlsRef>(null);
+  const refZoomControls = useRef<ZoomControlsRef>(null);
+  const refPhotoRecipe = useRef<HTMLDivElement>(null);
 
   const {
     areZoomControlsShown,
@@ -123,11 +121,16 @@ export default function PhotoLarge({
     filmCount,
   } = useCategoryCountsForPhoto(photo);
 
-  const showZoomControls = showZoomControlsProp && areZoomControlsShown;
+  const showZoomControls = _showZoomControls && areZoomControlsShown;
+  const selectZoomImageElement = useCallback(
+    (container: HTMLElement | null) => Array
+      .from(container?.getElementsByTagName('img') ?? [])
+      // Ignore fallback blur images
+      .filter((img) => !img.src.startsWith('data:image'))[0]
+    , []);
 
   const refRecipe = useRef<HTMLDivElement>(null);
-  const refRecipeButton = useRef<HTMLButtonElement>(null);
-  const refTriggers = useMemo(() => [refRecipeButton], []);
+  const refTriggers = useMemo(() => [refPhotoRecipe], []);
   const {
     shouldShowRecipeOverlay,
     toggleRecipeOverlay,
@@ -149,7 +152,6 @@ export default function PhotoLarge({
   const showLensContent = showLens && shouldShowLensDataForPhoto(photo);
   const showTagsContent = tags.length > 0;
   const showRecipeContent = showRecipe && shouldShowRecipeDataForPhoto(photo);
-  const showRecipeButton = shouldShowRecipeDataForPhoto(photo);
   const showFilmContent = showFilm && shouldShowFilmDataForPhoto(photo);
 
   useVisible({ ref, onVisible });
@@ -199,7 +201,8 @@ export default function PhotoLarge({
       arePhotosMatted && matteContentWidthForAspectRatio,
     )}>
       <ZoomControls
-        ref={zoomControlsRef}
+        ref={refZoomControls}
+        selectImageElement={selectZoomImageElement}
         {...{ isEnabled: showZoomControls, shouldZoomOnFKeydown }}
       >
         <ImageLarge
@@ -327,10 +330,13 @@ export default function PhotoLarge({
                         </div>}
                       {showRecipeContent && recipeTitle &&
                         <PhotoRecipe
+                          ref={refPhotoRecipe}
                           recipe={recipeTitle}
                           contrast="medium"
                           prefetch={prefetchRelatedLinks}
                           countOnHover={recipeCount}
+                          toggleRecipeOverlay={toggleRecipeOverlay}
+                          shouldShowRecipeOverlay={shouldShowRecipeOverlay}
                         />}
                       {showTagsContent &&
                         <PhotoTags
@@ -390,41 +396,12 @@ export default function PhotoLarge({
                       <li>{photo.isoFormatted}</li>
                       <li>{photo.exposureCompensationFormatted ?? '0ev'}</li>
                     </ul>
-                    {(showRecipeButton || showFilmContent) &&
-                      <div className="flex items-center gap-2 *:w-auto">
-                        {showFilmContent && photo.film &&
-                          <PhotoFilm
-                            film={photo.film}
-                            prefetch={prefetchRelatedLinks}
-                            countOnHover={filmCount}
-                          />}
-                        {showRecipeButton &&
-                          <Tooltip content="Fujifilm Recipe">
-                            <button
-                              ref={refRecipeButton}
-                              title="Fujifilm Recipe"
-                              onClick={() => {
-                                toggleRecipeOverlay();
-                                // Avoid unexpected tooltip trigger
-                                refRecipeButton.current?.blur();
-                              }}
-                              className={clsx(
-                                'text-medium',
-                                'border-medium rounded-md',
-                                'px-[4px] py-[2.5px] my-[-3px]',
-                                'translate-y-[2px]',
-                                'hover:bg-dim active:bg-main',
-                                !showFilm && 'translate-x-[-2px]',
-                              )}>
-                              {shouldShowRecipeOverlay
-                                ? <IoCloseSharp size={15} />
-                                : <TbChecklist
-                                  className="translate-x-[0.5px]"
-                                  size={15}
-                                />}
-                            </button>
-                          </Tooltip>} 
-                      </div>}
+                    {showFilmContent && photo.film &&
+                      <PhotoFilm
+                        film={photo.film}
+                        prefetch={prefetchRelatedLinks}
+                        countOnHover={filmCount}
+                      />}
                   </>}
                 <div className={clsx(
                   'flex gap-x-3 gap-y-baseline',
@@ -451,7 +428,7 @@ export default function PhotoLarge({
                       <LoaderButton
                         title="Open Image Viewer"
                         icon={<LuExpand size={15} />}
-                        onClick={() => zoomControlsRef.current?.open()}
+                        onClick={() => refZoomControls.current?.open()}
                         styleAs="link"
                         className="text-medium translate-y-[0.25px]"
                         hideFocusOutline

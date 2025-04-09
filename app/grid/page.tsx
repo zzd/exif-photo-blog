@@ -4,10 +4,11 @@ import {
 } from '@/photo';
 import PhotosEmptyState from '@/photo/PhotosEmptyState';
 import { Metadata } from 'next/types';
-import { getDataForCategories } from '@/category/data';
-import { getPhotos, getPhotosMeta } from '@/photo/db/query';
+import { getPhotos } from '@/photo/db/query';
 import { cache } from 'react';
 import PhotoGridPage from '@/photo/PhotoGridPage';
+import { getDataForCategoriesCached } from '@/category/cache';
+import { getPhotosMetaCached } from '@/photo/cache';
 
 export const dynamic = 'force-static';
 
@@ -25,19 +26,14 @@ export default async function GridPage() {
   const [
     photos,
     photosCount,
-    cameras,
-    lenses,
-    tags,
-    recipes,
-    films,
-    focalLengths,
+    categories,
   ] = await Promise.all([
     getPhotosCached()
       .catch(() => []),
-    getPhotosMeta()
+    getPhotosMetaCached()
       .then(({ count }) => count)
       .catch(() => 0),
-    ...getDataForCategories(),
+    getDataForCategoriesCached(),
   ]);
 
   return (
@@ -46,12 +42,7 @@ export default async function GridPage() {
         {...{
           photos,
           photosCount,
-          cameras,
-          lenses,
-          tags,
-          films,
-          recipes,
-          focalLengths,
+          ...categories,
         }}
       />
       : <PhotosEmptyState />
