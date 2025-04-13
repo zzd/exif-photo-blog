@@ -13,7 +13,7 @@ export default function PhotoRecipe({
   recipe,
   countOnHover,
   toggleRecipeOverlay,
-  shouldShowRecipeOverlay,
+  isShowingRecipeOverlay,
   ...props
 }: {
   recipe: string
@@ -35,10 +35,10 @@ export default function PhotoRecipe({
             : 'translate-y-[-0.5px]',
         )}
       />}
-      accessory={toggleRecipeOverlay &&
+      action={toggleRecipeOverlay &&
         <PhotoRecipeOverlayButton {...{
           toggleRecipeOverlay,
-          shouldShowRecipeOverlay,
+          isShowingRecipeOverlay,
         }} />}
       hoverEntity={countOnHover}
     />

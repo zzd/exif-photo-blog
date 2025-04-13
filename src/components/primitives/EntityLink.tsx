@@ -30,7 +30,7 @@ export default function EntityLink({
   href = '', // Make link optional for debugging purposes
   prefetch,
   title,
-  accessory,
+  action,
   hoverEntity,
   truncate = true,
   className,
@@ -45,7 +45,7 @@ export default function EntityLink({
   href?: string
   prefetch?: boolean
   title?: string
-  accessory?: ReactNode
+  action?: ReactNode
   hoverEntity?: ReactNode
   truncate?: boolean
   className?: string
@@ -79,12 +79,17 @@ export default function EntityLink({
       className={clsx(
         'inline-flex items-center gap-2',
         'max-w-full overflow-hidden select-none',
+        // Underline link text when action is hovered
+        '[&:has(.action:hover)_.text-content]:underline',
         className,
       )}
     >
       <LinkWithStatus
         href={href}
-        className="peer inline-flex items-center gap-2 max-w-full truncate"
+        className={clsx(
+          'peer',
+          'inline-flex items-center gap-2 max-w-full truncate',
+        )}
         isLoading={isLoading}
         setIsLoading={setIsLoading}
       >
@@ -99,29 +104,34 @@ export default function EntityLink({
           className: clsx(
             classForContrast(),
             href && !badged && 'hover:text-gray-900 dark:hover:text-gray-100',
-            classNameIcon,
           ),
-          classNameIcon: 'text-dim',
+          classNameIcon: clsx('text-dim', classNameIcon),
           debug,
         }}>
           {badged
             ? <Badge
               type="small"
               contrast={contrast}
-              className='translate-y-[-0.5px]'
+              className="translate-y-[-0.5px]"
               uppercase
               interactive
             >
               {renderLabel}
             </Badge>
             : <span className={clsx(
+              'text-content',
               truncate && 'inline-flex max-w-full *:truncate',
+              'decoration-dotted underline-offset-[4px]',
+              'decoration-gray-300 dark:decoration-gray-600',
             )}>
               {renderLabel}
             </span>}
         </LabeledIcon>
       </LinkWithStatus>
-      {accessory}
+      {action &&
+        <span className="action">
+          {action}
+        </span>}
       {!isLoading && hoverEntity !== undefined &&
         <span className="hidden peer-hover:inline text-dim">
           {hoverEntity}
