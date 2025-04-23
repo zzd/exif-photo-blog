@@ -19,6 +19,7 @@ import {
   storeAuthEmailCookie,
   clearAuthEmailCookie,
   hasAuthEmailCookie,
+  isCredentialsSignInError,
 } from '@/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { isPathAdmin, PATH_ROOT } from '@/app/paths';
@@ -121,10 +122,16 @@ export default function AppStateProvider({
   } = useSWR('getAuth', getAuthAction);
   useEffect(() => {
     setIsUserSignedInEager(hasAuthEmailCookie());
-    if (!authError) {
-      setUserEmail(auth?.user?.email ?? undefined);
-    } else {
+  }, []);
+  useEffect(() => {
+    if (authError) {
       setIsUserSignedInEager(false);
+      setUserEmail(undefined);
+      if (isCredentialsSignInError(authError)) {
+        clearAuthEmailCookie();
+      }
+    } else {
+      setUserEmail(auth?.user?.email ?? undefined);
     }
   }, [auth, authError]);
   const isUserSignedIn = Boolean(userEmail);

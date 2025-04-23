@@ -71,19 +71,28 @@ export const VERCEL_BYPASS_SECRET = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 // User-facing domain, potential site title
 const SITE_DOMAIN =
+  process.env.NEXT_PUBLIC_DOMAIN ||
+  // Legacy environment variable
   process.env.NEXT_PUBLIC_SITE_DOMAIN ||
   VERCEL_PRODUCTION_URL ||
   VERCEL_PROJECT_URL ||
   VERCEL_DEPLOYMENT_URL;
+const SITE_DOMAIN_SHARE = process.env.NEXT_PUBLIC_DOMAIN_SHARE;
 
 // Used primarily for absolute references such as OG images
-export const BASE_URL = makeUrlAbsolute((
-  process.env.NODE_ENV === 'production' &&
-  VERCEL_ENV !== 'preview'
-) ? SITE_DOMAIN
-  : VERCEL_ENV === 'preview'
-    ? VERCEL_BRANCH_URL || VERCEL_DEPLOYMENT_URL
-    : 'http://localhost:3000')?.toLocaleLowerCase();
+export const BASE_URL =
+  makeUrlAbsolute((
+    process.env.NODE_ENV === 'production' &&
+    VERCEL_ENV !== 'preview'
+  ) ? SITE_DOMAIN
+    : VERCEL_ENV === 'preview'
+      ? VERCEL_BRANCH_URL || VERCEL_DEPLOYMENT_URL
+      : 'http://localhost:3000')?.toLocaleLowerCase();
+export const BASE_URL_SHARE =
+  makeUrlAbsolute(SITE_DOMAIN_SHARE)?.toLocaleLowerCase();
+
+export const getBaseUrl = (share?: boolean) =>
+  (share && BASE_URL_SHARE) ? BASE_URL_SHARE : BASE_URL;
 
 const SITE_DOMAIN_SHORT = shortenUrl(SITE_DOMAIN);
 
@@ -327,7 +336,11 @@ export const APP_CONFIGURATION = {
     Boolean(process.env.ADMIN_PASSWORD)
   ),
   // Domain
-  hasDomain: Boolean(process.env.NEXT_PUBLIC_SITE_DOMAIN),
+  hasDomain: Boolean(
+    process.env.NEXT_PUBLIC_DOMAIN ||
+    // Legacy environment variable
+    process.env.NEXT_PUBLIC_SITE_DOMAIN,
+  ),
   // Content
   hasNavTitle: Boolean(NAV_TITLE),
   hasNavCaption: Boolean(NAV_CAPTION),
@@ -394,6 +407,7 @@ export const APP_CONFIGURATION = {
   isAdminSqlDebugEnabled: ADMIN_SQL_DEBUG_ENABLED,
   // Misc
   baseUrl: BASE_URL,
+  baseUrlShare: BASE_URL_SHARE,
   commitSha: VERCEL_GIT_COMMIT_SHA_SHORT,
   commitMessage: VERCEL_GIT_COMMIT_MESSAGE,
   commitUrl: VERCEL_GIT_COMMIT_URL,
