@@ -18,15 +18,16 @@ import { AdminData, getAdminDataAction } from '@/admin/actions';
 import {
   storeAuthEmailCookie,
   clearAuthEmailCookie,
-  hasAuthEmailCookie,
   isCredentialsSignInError,
+  getAuthEmailCookie,
 } from '@/auth';
 import { useRouter, usePathname } from 'next/navigation';
-import { isPathAdmin, PATH_ROOT } from '@/app/paths';
+import { isPathProtected, PATH_ROOT } from '@/app/paths';
 import { INITIAL_UPLOAD_STATE, UploadState } from '@/admin/upload';
 import { RecipeProps } from '@/recipe';
 import { getCountsForCategoriesCachedAction } from '@/category/actions';
 import { nanoid } from 'nanoid';
+import { toastSuccess } from '@/toast';
 
 export default function AppStateProvider({
   children,
@@ -75,8 +76,8 @@ export default function AppStateProvider({
   // AUTH
   const [userEmail, setUserEmail] =
     useState<string>();
-  const [isUserSignedInEager, setIsUserSignedInEager] =
-    useState(false);
+  const [userEmailEager, setUserEmailEager] =
+    useState<string>();
   // ADMIN
   const [adminUpdateTimes, setAdminUpdateTimes] =
     useState<Date[]>([]);
@@ -121,12 +122,12 @@ export default function AppStateProvider({
     isLoading: isCheckingAuth,
   } = useSWR('getAuth', getAuthAction);
   useEffect(() => {
-    setIsUserSignedInEager(hasAuthEmailCookie());
+    setUserEmailEager(getAuthEmailCookie());
   }, []);
   useEffect(() => {
     if (authError) {
-      setIsUserSignedInEager(false);
       setUserEmail(undefined);
+      setUserEmailEager(undefined);
       if (isCredentialsSignInError(authError)) {
         clearAuthEmailCookie();
       }
@@ -135,6 +136,7 @@ export default function AppStateProvider({
     }
   }, [auth, authError]);
   const isUserSignedIn = Boolean(userEmail);
+  const isUserSignedInEager = Boolean(userEmailEager);
 
   const {
     data: adminData,
@@ -166,9 +168,13 @@ export default function AppStateProvider({
 
   const clearAuthStateAndRedirectIfNecessary = useCallback(() => {
     setUserEmail(undefined);
-    setIsUserSignedInEager(false);
+    setUserEmailEager(undefined);
     clearAuthEmailCookie();
-    if (isPathAdmin(pathname)) { router.push(PATH_ROOT); }
+    if (isPathProtected(pathname)) {
+      router.push(PATH_ROOT);
+    } else {
+      toastSuccess('Signed out');
+    }
   }, [router, pathname]);
 
   // Returns false when upload is cancelled
@@ -216,6 +222,7 @@ export default function AppStateProvider({
         // AUTH
         isCheckingAuth,
         userEmail,
+        userEmailEager,
         setUserEmail,
         isUserSignedIn,
         isUserSignedInEager,
