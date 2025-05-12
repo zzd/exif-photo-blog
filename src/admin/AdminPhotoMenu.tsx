@@ -26,6 +26,7 @@ import IconFavs from '@/components/icons/IconFavs';
 import IconEdit from '@/components/icons/IconEdit';
 import { photoNeedsToBeSynced } from '@/photo/sync';
 import { KEY_COMMANDS } from '@/photo/key-commands';
+import { useAppText } from '@/i18n/state/client';
 
 export default function AdminPhotoMenu({
   photo,
@@ -41,14 +42,16 @@ export default function AdminPhotoMenu({
 }) {
   const { isUserSignedIn, registerAdminUpdate } = useAppState();
 
+  const appText = useAppText();
+
   const isFav = isPhotoFav(photo);
   const path = usePathname();
   const shouldRedirectFav = isPathFavs(path) && isFav;
   const shouldRedirectDelete = pathForPhoto({ photo: photo.id }) === path;
 
-  const sections = useMemo(() => {
-    const sectionMain: ComponentProps<typeof MoreMenuItem>[] = [{
-      label: 'Edit',
+  const sectionMain = useMemo(() => {
+    const items: ComponentProps<typeof MoreMenuItem>[] = [{
+      label: appText.admin.edit,
       icon: <IconEdit
         size={15}
         className="translate-x-[0.5px]"
@@ -57,8 +60,8 @@ export default function AdminPhotoMenu({
       ...showKeyCommands && { keyCommand: KEY_COMMANDS.edit },
     }];
     if (includeFavorite) {
-      sectionMain.push({
-        label: isFav ? 'Unfavorite' : 'Favorite',
+      items.push({
+        label: isFav ? appText.admin.unfavorite : appText.admin.favorite,
         icon: <IconFavs
           size={14}
           className="translate-x-[-1px] translate-y-[0.5px]"
@@ -75,8 +78,8 @@ export default function AdminPhotoMenu({
         },
       });
     }
-    sectionMain.push({
-      label: 'Download',
+    items.push({
+      label: appText.admin.download,
       icon: <MdOutlineFileDownload
         size={17}
         className="translate-x-[-1px]"
@@ -85,10 +88,10 @@ export default function AdminPhotoMenu({
       hrefDownloadName: downloadFileNameForPhoto(photo),
       ...showKeyCommands && { keyCommand: KEY_COMMANDS.download },
     });
-    sectionMain.push({
-      label: 'Sync',
+    items.push({
+      label: appText.admin.sync,
       labelComplex: <span className="inline-flex items-center gap-2">
-        <span>Sync</span>
+        <span>{appText.admin.sync}</span>
         {photoNeedsToBeSynced(photo) &&
           <InsightsIndicatorDot
             colorOverride="blue"
@@ -103,48 +106,60 @@ export default function AdminPhotoMenu({
         .then(() => revalidatePhoto?.(photo.id)),
       ...showKeyCommands && { keyCommand: KEY_COMMANDS.sync },
     });
-    const sectionDelete: ComponentProps<typeof MoreMenuItem>[] = [{
-      label: 'Delete',
-      icon: <BiTrash
-        size={15}
-        className="translate-x-[-1px]"
-      />,
-      className: 'text-error *:hover:text-error',
-      color: 'red',
-      action: () => {
-        if (confirm(deleteConfirmationTextForPhoto(photo))) {
-          return deletePhotoAction(
-            photo.id,
-            photo.url,
-            shouldRedirectDelete,
-          ).then(() => {
-            revalidatePhoto?.(photo.id, true);
-            registerAdminUpdate?.();
-          });
-        }
-      },
-      ...showKeyCommands && {
-        keyCommandModifier: KEY_COMMANDS.delete[0],
-        keyCommand: KEY_COMMANDS.delete[1],
-      },
-    }];
-    return [sectionMain, sectionDelete];
+
+    return items;
   }, [
+    appText,
     photo,
     showKeyCommands,
     includeFavorite,
     isFav,
     shouldRedirectFav,
     revalidatePhoto,
+  ]);
+
+  const sectionDelete: ComponentProps<typeof MoreMenuItem>[] = useMemo(() => [{
+    label: appText.admin.delete,
+    icon: <BiTrash
+      size={15}
+      className="translate-x-[-1px]"
+    />,
+    className: 'text-error *:hover:text-error',
+    color: 'red',
+    action: () => {
+      if (confirm(deleteConfirmationTextForPhoto(photo, appText))) {
+        return deletePhotoAction(
+          photo.id,
+          photo.url,
+          shouldRedirectDelete,
+        ).then(() => {
+          revalidatePhoto?.(photo.id, true);
+          registerAdminUpdate?.();
+        });
+      }
+    },
+    ...showKeyCommands && {
+      keyCommandModifier: KEY_COMMANDS.delete[0],
+      keyCommand: KEY_COMMANDS.delete[1],
+    },
+  }], [
+    appText,
+    photo,
+    showKeyCommands,
+    revalidatePhoto,
     shouldRedirectDelete,
     registerAdminUpdate,
   ]);
 
+  const sections = useMemo(() =>
+    [sectionMain, sectionDelete]
+  , [sectionMain, sectionDelete]);
+
   return (
     isUserSignedIn
       ? <MoreMenu {...{
-        sections,
         ...props,
+        sections,
       }}/>
       : null
   );

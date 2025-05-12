@@ -50,6 +50,7 @@ import PhotoLens from '@/lens/PhotoLens';
 import { lensFromPhoto } from '@/lens';
 import MaskedScroll from '@/components/MaskedScroll';
 import useCategoryCountsForPhoto from '@/category/useCategoryCountsForPhoto';
+import { useAppText } from '@/i18n/state/client';
 
 export default function PhotoLarge({
   photo,
@@ -115,6 +116,8 @@ export default function PhotoLarge({
     shouldDebugRecipeOverlays,
     isUserSignedIn,
   } = useAppState();
+
+  const appText = useAppText();
 
   const {
     cameraCount,
@@ -378,7 +381,7 @@ export default function PhotoLarge({
                           <>
                             {' '}
                             <Tooltip
-                              content="35mm equivalent"
+                              content={appText.tooltip['35mm']}
                               sideOffset={3}
                               supportMobile
                             >
@@ -434,7 +437,7 @@ export default function PhotoLarge({
                   )}>
                     {showZoomControls &&
                       <LoaderButton
-                        tooltip="Zoom In"
+                        tooltip={appText.tooltip.zoom}
                         icon={<LuExpand size={15} />}
                         onClick={() => refZoomControls.current?.open()}
                         styleAs="link"
@@ -443,7 +446,7 @@ export default function PhotoLarge({
                       />}
                     {shouldShare &&
                       <ShareButton
-                        tooltip="Share Photo"
+                        tooltip={appText.tooltip.sharePhoto}
                         photo={photo}
                         tag={shouldShareTag
                           ? primaryTag

@@ -19,6 +19,7 @@ import { useCallback, useRef, useState } from 'react';
 import useKeydownHandler from '@/utility/useKeydownHandler';
 import { usePathname } from 'next/navigation';
 import { KEY_COMMANDS } from '@/photo/key-commands';
+import { useAppText } from '@/i18n/state/client';
 
 export type SwitcherSelection = 'feed' | 'grid' | 'admin';
 
@@ -30,6 +31,8 @@ export default function AppViewSwitcher({
   className?: string
 }) {
   const pathname = usePathname();
+  
+  const appText = useAppText();
 
   const {
     isUserSignedIn,
@@ -66,7 +69,7 @@ export default function AppViewSwitcher({
       hrefRef={refHrefFeed}
       active={currentSelection === 'feed'}
       tooltip={{...SHOW_KEYBOARD_SHORTCUT_TOOLTIPS && {
-        content: 'Feed',
+        content: appText.nav.feed,
         keyCommand: KEY_COMMANDS.feed,
       }}}
       noPadding
@@ -79,7 +82,7 @@ export default function AppViewSwitcher({
       hrefRef={refHrefGrid}
       active={currentSelection === 'grid'}
       tooltip={{...SHOW_KEYBOARD_SHORTCUT_TOOLTIPS && {
-        content: 'Grid',
+        content: appText.nav.grid,
         keyCommand: KEY_COMMANDS.grid,
       }}}
       noPadding
@@ -103,7 +106,7 @@ export default function AppViewSwitcher({
             noPadding
             tooltip={{
               ...!isAdminMenuOpen && SHOW_KEYBOARD_SHORTCUT_TOOLTIPS && {
-                content: 'Admin Menu',
+                content: appText.nav.admin,
                 keyCommand: KEY_COMMANDS.admin,
               },
             }}
@@ -116,7 +119,7 @@ export default function AppViewSwitcher({
             />}
             tooltip={{
               ...!isAdminMenuOpen && SHOW_KEYBOARD_SHORTCUT_TOOLTIPS && {
-                content: 'Admin Menu',
+                content: appText.nav.admin,
                 keyCommand: KEY_COMMANDS.admin,
               },
             }}
@@ -128,7 +131,7 @@ export default function AppViewSwitcher({
           icon={<IconSearch includeTitle={false} />}
           onClick={() => setIsCommandKOpen?.(true)}
           tooltip={{...SHOW_KEYBOARD_SHORTCUT_TOOLTIPS && {
-            content: 'Search',
+            content: appText.nav.search,
             keyCommandModifier: KEY_COMMANDS.search[0],
             keyCommand: KEY_COMMANDS.search[1],
           }}}
