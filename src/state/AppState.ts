@@ -58,12 +58,13 @@ export type AppStateContextType = {
   setIsPerformingSelectEdit?: Dispatch<SetStateAction<boolean>>
   insightsIndicatorStatus?: InsightsIndicatorStatus
   // UPLOAD
-  startUpload?: (onStart?: () => void) => void
+  startUpload?: () => Promise<boolean>
   uploadInputRef?: RefObject<HTMLInputElement | null>
   uploadState: UploadState
   setUploadState?: (uploadState: Partial<UploadState>) => void
   resetUploadState?: () => void
   // DEBUG
+  areAdminDebugToolsEnabled?: boolean
   isGridHighDensity?: boolean
   setIsGridHighDensity?: Dispatch<SetStateAction<boolean>>
   areZoomControlsShown?: boolean

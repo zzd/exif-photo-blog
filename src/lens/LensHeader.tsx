@@ -23,10 +23,15 @@ export default async function LensHeader({
 }) {
   const lens = lensFromPhoto(photos[0], lensProp);
   const appText = await getAppText();
+
   return (
     <PhotoHeader
       lens={lens}
-      entity={<PhotoLens {...{ lens }} contrast="high" />}
+      entity={<PhotoLens
+        {...{ lens }}
+        contrast="high"
+        showTooltip={false}
+      />}
       entityDescription={
         descriptionForLensPhotos(
           photos,
