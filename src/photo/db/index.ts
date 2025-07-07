@@ -1,8 +1,8 @@
-import { PRIORITY_ORDER_ENABLED } from '@/app/config';
 import { parameterize } from '@/utility/string';
 import { PhotoSetCategory } from '../../category';
 import { Camera } from '@/camera';
 import { Lens } from '@/lens';
+import { APP_DEFAULT_SORT_BY, SortBy } from './sort';
 
 export const GENERATE_STATIC_PARAMS_LIMIT = 1000;
 export const PHOTO_DEFAULT_LIMIT = 100;
@@ -19,8 +19,9 @@ const parameterizeForDb = (field: string) =>
     `REPLACE(${acc}, '${from}', '${to}')`
   , `LOWER(TRIM(${field}))`);
 
-export type GetPhotosOptions = {
-  sortBy?: 'createdAt' | 'createdAtAsc' | 'takenAt' | 'priority'
+export type PhotoQueryOptions = {
+  sortBy?: SortBy
+  sortWithPriority?: boolean
   limit?: number
   offset?: number
   query?: string
@@ -28,21 +29,23 @@ export type GetPhotosOptions = {
   takenBefore?: Date
   takenAfterInclusive?: Date
   updatedBefore?: Date
+  excludeFromFeeds?: boolean
   hidden?: 'exclude' | 'include' | 'only'
 } & Omit<PhotoSetCategory, 'camera' | 'lens'> & {
   camera?: Partial<Camera>
   lens?: Partial<Lens>
 };
 
-export const areOptionsSensitive = (options: GetPhotosOptions) =>
+export const areOptionsSensitive = (options: PhotoQueryOptions) =>
   options.hidden === 'include' || options.hidden === 'only';
 
 export const getWheresFromOptions = (
-  options: GetPhotosOptions,
+  options: PhotoQueryOptions,
   initialValuesIndex = 1,
 ) => {
   const {
     hidden = 'exclude',
+    excludeFromFeeds,
     takenBefore,
     takenAfterInclusive,
     updatedBefore,
@@ -71,6 +74,9 @@ export const getWheresFromOptions = (
     break;
   }
 
+  if (excludeFromFeeds) {
+    wheres.push('exclude_from_feeds IS NOT TRUE');
+  }
   if (takenBefore) {
     wheres.push(`taken_at < $${valuesIndex++}`);
     wheresValues.push(takenBefore.toISOString());
@@ -93,6 +99,10 @@ export const getWheresFromOptions = (
     wheresValues.push(maximumAspectRatio);
   }
   if (recent) {
+    // Newest upload must be within past 2 weeks
+    // eslint-disable-next-line max-len
+    wheres.push('(SELECT MAX(created_at) FROM photos) >= (now() - INTERVAL \'14 days\')');
+    // Selects must be within 2 weeks of newest upload
     // eslint-disable-next-line max-len
     wheres.push('created_at >= (SELECT MAX(created_at) - INTERVAL \'14 days\' FROM photos)');
   }
@@ -144,25 +154,34 @@ export const getWheresFromOptions = (
   };
 };
 
-export const getOrderByFromOptions = (options: GetPhotosOptions) => {
+export const getOrderByFromOptions = (options: PhotoQueryOptions) => {
   const {
-    sortBy = PRIORITY_ORDER_ENABLED ? 'priority' : 'takenAt',
+    sortBy = APP_DEFAULT_SORT_BY,
+    sortWithPriority,
   } = options;
 
   switch (sortBy) {
-  case 'createdAt':
-    return 'ORDER BY created_at DESC';
-  case 'createdAtAsc':
-    return 'ORDER BY created_at ASC';
   case 'takenAt':
-    return 'ORDER BY taken_at DESC';
-  case 'priority':
-    return 'ORDER BY priority_order ASC, taken_at DESC';
+    return sortWithPriority
+      ? 'ORDER BY priority_order ASC, taken_at DESC'
+      : 'ORDER BY taken_at DESC';
+  case 'takenAtAsc':
+    return sortWithPriority
+      ? 'ORDER BY priority_order ASC, taken_at ASC'
+      : 'ORDER BY taken_at ASC';
+  case 'createdAt':
+    return sortWithPriority
+      ? 'ORDER BY priority_order ASC, created_at DESC'
+      : 'ORDER BY created_at DESC';
+  case 'createdAtAsc':
+    return sortWithPriority
+      ? 'ORDER BY priority_order ASC, created_at ASC'
+      : 'ORDER BY created_at ASC';
   }
 };
 
 export const getLimitAndOffsetFromOptions = (
-  options: GetPhotosOptions,
+  options: PhotoQueryOptions,
   initialValuesIndex = 1,
 ) => {
   const {

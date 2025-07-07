@@ -5,19 +5,24 @@ import { PATH_GRID_INFERRED } from '@/app/paths';
 import PhotoGridSidebar from './PhotoGridSidebar';
 import PhotoGridContainer from './PhotoGridContainer';
 import { ComponentProps, useEffect, useRef } from 'react';
-import { useAppState } from '@/state/AppState';
+import { useAppState } from '@/app/AppState';
 import clsx from 'clsx/lite';
 import useElementHeight from '@/utility/useElementHeight';
 import MaskedScroll from '@/components/MaskedScroll';
 import { IS_RECENTS_FIRST } from '@/app/config';
+import { SortBy } from './db/sort';
 
 export default function PhotoGridPageClient({
   photos,
   photosCount,
+  sortBy,
+  sortWithPriority,
   ...categories
 }: ComponentProps<typeof PhotoGridSidebar> & {
   photos: Photo[]
   photosCount: number
+  sortBy: SortBy
+  sortWithPriority: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -35,6 +40,10 @@ export default function PhotoGridPageClient({
       cacheKey={`page-${PATH_GRID_INFERRED}`}
       photos={photos}
       count={photosCount}
+      sortBy={sortBy}
+      sortWithPriority={sortWithPriority}
+      excludeFromFeeds
+      prioritizeInitialPhotos
       sidebar={
         <MaskedScroll
           ref={ref}
