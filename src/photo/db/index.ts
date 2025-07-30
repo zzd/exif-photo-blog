@@ -2,22 +2,23 @@ import { parameterize } from '@/utility/string';
 import { PhotoSetCategory } from '../../category';
 import { Camera } from '@/camera';
 import { Lens } from '@/lens';
-import { APP_DEFAULT_SORT_BY, SortBy } from './sort';
+import { APP_DEFAULT_SORT_BY, SortBy } from '../sort';
 
 export const GENERATE_STATIC_PARAMS_LIMIT = 1000;
 export const PHOTO_DEFAULT_LIMIT = 100;
 
-const DB_PARAMETERIZE_REPLACEMENTS = [
-  [',', ''],
-  ['/', ''],
-  ['+', '-'],
-  [' ', '-'],
-];
+// These must mirror utility/string.ts parameterization
+const CHARACTERS_TO_REMOVE = [',', '/'];
+const CHARACTERS_TO_REPLACE = ['+', '&', '|', ' '];
 
 const parameterizeForDb = (field: string) =>
-  DB_PARAMETERIZE_REPLACEMENTS.reduce((acc, [from, to]) =>
-    `REPLACE(${acc}, '${from}', '${to}')`
-  , `LOWER(TRIM(${field}))`);
+  `REGEXP_REPLACE(
+    REGEXP_REPLACE(
+      LOWER(TRIM(${field})),
+      '[${CHARACTERS_TO_REMOVE.join('')}]', '', 'g'
+    ),
+    '[${CHARACTERS_TO_REPLACE.join('')}]', '-', 'g'
+  )`;
 
 export type PhotoQueryOptions = {
   sortBy?: SortBy
@@ -102,9 +103,9 @@ export const getWheresFromOptions = (
     // Newest upload must be within past 2 weeks
     // eslint-disable-next-line max-len
     wheres.push('(SELECT MAX(created_at) FROM photos) >= (now() - INTERVAL \'14 days\')');
-    // Selects must be within 2 weeks of newest upload
+    // Selects must be within 1 week of newest upload
     // eslint-disable-next-line max-len
-    wheres.push('created_at >= (SELECT MAX(created_at) - INTERVAL \'14 days\' FROM photos)');
+    wheres.push('created_at >= (SELECT MAX(created_at) - INTERVAL \'7 days\' FROM photos)');
   }
   if (year) {
     wheres.push(`EXTRACT(YEAR FROM taken_at) = $${valuesIndex++}`);

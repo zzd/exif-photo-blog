@@ -41,8 +41,8 @@ import PhotoYear from '@/years/PhotoYear';
 import { chunkArray } from '@/utility/array';
 import PhotoRecents from '@/recents/PhotoRecents';
 
-const APPROXIMATE_ITEM_HEIGHT = 36;
-const ABOUT_HEIGHT_OFFSET = 80;
+const APPROXIMATE_ITEM_HEIGHT = 40;
+const ABOUT_HEIGHT_OFFSET = 24;
 
 export default function PhotoGridSidebar({
   photosCount,
@@ -162,7 +162,6 @@ export default function PhotoGridSidebar({
             countOnHover={count}
             prefetch={false}
             contrast="low"
-            hideAppleIcon
             badged
           />)}
     />

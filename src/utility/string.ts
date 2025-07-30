@@ -22,11 +22,12 @@ export const parameterize = (
 ) =>
   string
     .trim()
-    // Replace spaces, underscores, slashes, pluses, dashes with dashes
-    .replaceAll(/[\s_–—+]/gi, '-')
+    // Replace spaces, underscores, slashes, pluses, pipes, dashes with dashes
+    .replaceAll(/[\s_–—+&|]/gi, '-')
     // Remove punctuation
-    .replaceAll(/['"!@#$%^&*()=[\]{};:/?,<>\\/|`~]/gi, '')
+    .replaceAll(/['"!@#$%^*()=[\]{};:/?,<>\\/`~]/gi, '')
     // Removes non-alphanumeric characters, if configured
+    // (breaks i18m)
     .replaceAll(
       shouldRemoveNonAlphanumeric
         ? /([^a-z0-9-])/gi

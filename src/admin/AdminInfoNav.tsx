@@ -1,6 +1,6 @@
 'use client';
 
-import { PATH_ADMIN_CONFIGURATION, PATH_ADMIN_INSIGHTS } from '@/app/paths';
+import { PATH_ADMIN_CONFIGURATION, PATH_ADMIN_INSIGHTS } from '@/app/path';
 import ResponsiveText from '@/components/primitives/ResponsiveText';
 import clsx from 'clsx/lite';
 import ClearCacheButton from '@/admin/ClearCacheButton';
@@ -24,7 +24,7 @@ const ADMIN_INFO_PAGE_WITHOUT_INSIGHTS = [{
   path: PATH_ADMIN_CONFIGURATION,
 }] as typeof ADMIN_INFO_PAGES;
 
-export default function AdminInfoPage({
+export default function AdminInfoNav({
   includeInsights,
 }: {
   includeInsights: boolean
