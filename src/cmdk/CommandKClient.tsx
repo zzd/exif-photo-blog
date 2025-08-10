@@ -59,6 +59,7 @@ import { formatCount, formatCountDescriptive } from '@/utility/string';
 import CommandKItem from './CommandKItem';
 import {
   CATEGORY_VISIBILITY,
+  COLOR_SORT_ENABLED,
   GRID_HOMEPAGE_ENABLED,
   HIDE_TAGS_WITH_ONE_PHOTO,
 } from '@/app/config';
@@ -148,6 +149,8 @@ export default function CommandKClient({
 } & PhotoSetCategories) {
   const pathname = usePathname();
 
+  const appText = useAppText();
+
   const {
     isUserSignedIn,
     clearAuthStateAndRedirectIfNecessary,
@@ -182,17 +185,22 @@ export default function CommandKClient({
   const {
     doesPathOfferSort,
     isSortedByDefault,
-    pathNewest,
-    pathOldest,
-    pathTakenAt,
-    pathUploadedAt,
-    pathClearSort,
     isAscending,
     isTakenAt,
     isUploadedAt,
-  } = useMemo(() => getSortStateFromPath(pathname), [pathname]);
-
-  const appText = useAppText();
+    isColor,
+    descendingLabel,
+    ascendingLabel,
+    pathDescending,
+    pathAscending,
+    pathTakenAt,
+    pathUploadedAt,
+    pathColor,
+    pathClearSort,
+  } = useMemo(
+    () => getSortStateFromPath(pathname, appText),
+    [pathname, appText],
+  );
 
   const isOpenRef = useRef(isOpen);
 
@@ -343,107 +351,107 @@ export default function CommandKClient({
     CATEGORY_VISIBILITY
       .map(category => {
         switch (category) {
-        case 'recents': return {
-          heading: appText.category.recentPlural,
-          accessory: <IconRecents size={15} />,
-          items: recentsStatus ? [{
-            label: recentsStatus.subhead,
-            annotation: formatCount(recentsStatus.count),
-            annotationAria: formatCountDescriptive(recentsStatus.count),
-            path: PREFIX_RECENTS,
-          }] : [],
-        };
-        case 'years': return {
-          heading: appText.category.yearPlural,
-          accessory: <IconYear size={14} />,
-          items: years.map(({ year, count }) => ({
-            label: year,
-            annotation: formatCount(count),
-            annotationAria: formatCountDescriptive(count),
-            path: pathForYear(year),
-          })),
-        };
-        case 'cameras': return {
-          heading: appText.category.cameraPlural,
-          accessory: <IconCamera size={14} />,
-          items: cameras.map(({ camera, count }) => ({
-            label: formatCameraText(camera),
-            annotation: formatCount(count),
-            annotationAria: formatCountDescriptive(count),
-            path: pathForCamera(camera),
-          })),
-        };
-        case 'lenses': return {
-          heading: appText.category.lensPlural,
-          accessory: <IconLens size={14} className="translate-y-[0.5px]" />,
-          items: lenses.map(({ lens, count }) => ({
-            label: formatLensText(lens, 'medium'),
-            explicitKey: formatLensText(lens, 'long'),
-            annotation: formatCount(count),
-            annotationAria: formatCountDescriptive(count),
-            path: pathForLens(lens),
-          })),
-        };
-        case 'tags': return {
-          heading: appText.category.tagPlural,
-          accessory: <IconTag
-            size={13}
-            className="translate-x-[1px] translate-y-[0.75px]"
-          />,
-          items: tags.map(({ tag, count }) => ({
-            explicitKey: formatTag(tag),
-            label: <span className="flex items-center gap-[7px]">
-              {formatTag(tag)}
-              {isTagFavs(tag) &&
-                <IconFavs
-                  size={13}
-                  className="translate-y-[-0.5px]"
-                  highlight
-                />}
-              {isTagPrivate(tag) &&
-                <IconLock
-                  size={12}
-                  className="text-dim translate-y-[-0.5px]"
-                />}
-            </span>,
-            annotation: formatCount(count),
-            annotationAria: formatCountDescriptive(count),
-            path: pathForTag(tag),
-          })),
-        };
-        case 'recipes': return {
-          heading: appText.category.recipePlural,
-          accessory: <IconRecipe
-            size={15}
-            className="translate-x-[-1px]"
-          />,
-          items: recipes.map(({ recipe, count }) => ({
-            label: formatRecipe(recipe),
-            annotation: formatCount(count),
-            annotationAria: formatCountDescriptive(count),
-            path: pathForRecipe(recipe),
-          })),
-        };
-        case 'films': return {
-          heading: appText.category.filmPlural,
-          accessory: <IconFilm size={14} />,
-          items: films.map(({ film, count }) => ({
-            label: labelForFilm(film).medium,
-            annotation: formatCount(count),
-            annotationAria: formatCountDescriptive(count),
-            path: pathForFilm(film),
-          })),
-        };
-        case 'focal-lengths': return {
-          heading: appText.category.focalLengthPlural,
-          accessory: <IconFocalLength className="text-[14px]" />,
-          items: focalLengths.map(({ focal, count }) => ({
-            label: formatFocalLength(focal),
-            annotation: formatCount(count),
-            annotationAria: formatCountDescriptive(count),
-            path: pathForFocalLength(focal),
-          })),
-        };
+          case 'recents': return {
+            heading: appText.category.recentPlural,
+            accessory: <IconRecents size={15} />,
+            items: recentsStatus ? [{
+              label: recentsStatus.subhead,
+              annotation: formatCount(recentsStatus.count),
+              annotationAria: formatCountDescriptive(recentsStatus.count),
+              path: PREFIX_RECENTS,
+            }] : [],
+          };
+          case 'years': return {
+            heading: appText.category.yearPlural,
+            accessory: <IconYear size={14} />,
+            items: years.map(({ year, count }) => ({
+              label: year,
+              annotation: formatCount(count),
+              annotationAria: formatCountDescriptive(count),
+              path: pathForYear(year),
+            })),
+          };
+          case 'cameras': return {
+            heading: appText.category.cameraPlural,
+            accessory: <IconCamera size={14} />,
+            items: cameras.map(({ camera, count }) => ({
+              label: formatCameraText(camera),
+              annotation: formatCount(count),
+              annotationAria: formatCountDescriptive(count),
+              path: pathForCamera(camera),
+            })),
+          };
+          case 'lenses': return {
+            heading: appText.category.lensPlural,
+            accessory: <IconLens size={14} className="translate-y-[0.5px]" />,
+            items: lenses.map(({ lens, count }) => ({
+              label: formatLensText(lens, 'medium'),
+              explicitKey: formatLensText(lens, 'long'),
+              annotation: formatCount(count),
+              annotationAria: formatCountDescriptive(count),
+              path: pathForLens(lens),
+            })),
+          };
+          case 'tags': return {
+            heading: appText.category.tagPlural,
+            accessory: <IconTag
+              size={13}
+              className="translate-x-[1px] translate-y-[0.75px]"
+            />,
+            items: tags.map(({ tag, count }) => ({
+              explicitKey: formatTag(tag),
+              label: <span className="flex items-center gap-[7px]">
+                {formatTag(tag)}
+                {isTagFavs(tag) &&
+                  <IconFavs
+                    size={13}
+                    className="translate-y-[-0.5px]"
+                    highlight
+                  />}
+                {isTagPrivate(tag) &&
+                  <IconLock
+                    size={12}
+                    className="text-dim translate-y-[-0.5px]"
+                  />}
+              </span>,
+              annotation: formatCount(count),
+              annotationAria: formatCountDescriptive(count),
+              path: pathForTag(tag),
+            })),
+          };
+          case 'recipes': return {
+            heading: appText.category.recipePlural,
+            accessory: <IconRecipe
+              size={15}
+              className="translate-x-[-1px]"
+            />,
+            items: recipes.map(({ recipe, count }) => ({
+              label: formatRecipe(recipe),
+              annotation: formatCount(count),
+              annotationAria: formatCountDescriptive(count),
+              path: pathForRecipe(recipe),
+            })),
+          };
+          case 'films': return {
+            heading: appText.category.filmPlural,
+            accessory: <IconFilm size={14} />,
+            items: films.map(({ film, count }) => ({
+              label: labelForFilm(film).medium,
+              annotation: formatCount(count),
+              annotationAria: formatCountDescriptive(count),
+              path: pathForFilm(film),
+            })),
+          };
+          case 'focal-lengths': return {
+            heading: appText.category.focalLengthPlural,
+            accessory: <IconFocalLength className="text-[14px]" />,
+            items: focalLengths.map(({ focal, count }) => ({
+              label: formatFocalLength(focal),
+              annotation: formatCount(count),
+              annotationAria: formatCountDescriptive(count),
+              path: pathForFocalLength(focal),
+            })),
+          };
         }
       })
       .filter(Boolean) as CommandKSection[]
@@ -525,12 +533,12 @@ export default function CommandKClient({
   }
 
   const sortItems = [{
-    label: appText.sort.newestFirst,
-    path: pathNewest,
+    label: descendingLabel,
+    path: pathDescending,
     annotation: renderCheck(!isAscending),
   }, {
-    label: appText.sort.oldestFirst,
-    path: pathOldest,
+    label: ascendingLabel,
+    path: pathAscending,
     annotation: renderCheck(isAscending),
   }, {
     label: appText.sort.byTakenAt,
@@ -541,6 +549,14 @@ export default function CommandKClient({
     path: pathUploadedAt,
     annotation: renderCheck(isUploadedAt),
   }];
+
+  if (COLOR_SORT_ENABLED) {
+    sortItems.push({
+      label: appText.sort.byColor,
+      path: pathColor,
+      annotation: renderCheck(isColor),
+    });
+  }
 
   if (!isSortedByDefault) {
     sortItems.push({
