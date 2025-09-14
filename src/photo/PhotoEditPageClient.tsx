@@ -3,7 +3,10 @@
 import AdminChildPage from '@/components/AdminChildPage';
 import { Photo } from '.';
 import { PATH_ADMIN_PHOTOS } from '@/app/path';
-import { PhotoFormData, convertPhotoToFormData } from './form';
+import {
+  PhotoFormData,
+  convertPhotoToFormData,
+} from './form';
 import PhotoForm from './form/PhotoForm';
 import { Tags } from '@/tag';
 import AiButton from './ai/AiButton';
@@ -12,9 +15,11 @@ import ExifCaptureButton from '@/admin/ExifCaptureButton';
 import { useState } from 'react';
 import { Recipes } from '@/recipe';
 import { Films } from '@/film';
+import { StorageListResponse } from '@/platforms/storage';
 
 export default function PhotoEditPageClient({
   photo,
+  photoStorageUrls,
   uniqueTags,
   uniqueRecipes,
   uniqueFilms,
@@ -23,6 +28,7 @@ export default function PhotoEditPageClient({
   blurData,
 }: {
   photo: Photo
+  photoStorageUrls?: StorageListResponse
   uniqueTags: Tags
   uniqueRecipes: Recipes
   uniqueFilms: Films
@@ -62,6 +68,7 @@ export default function PhotoEditPageClient({
             <AiButton {...{
               aiContent,
               shouldConfirm: shouldConfirmAiTextGeneration,
+              tooltip: 'Generate AI text for all fields',
             }} />}
           <ExifCaptureButton
             photoUrl={photo.url}
@@ -73,6 +80,7 @@ export default function PhotoEditPageClient({
       <PhotoForm
         type="edit"
         initialPhotoForm={photoForm}
+        photoStorageUrls={photoStorageUrls}
         updatedExifData={updatedExifData}
         updatedBlurData={blurData}
         uniqueTags={uniqueTags}
@@ -80,8 +88,8 @@ export default function PhotoEditPageClient({
         uniqueFilms={uniqueFilms}
         aiContent={hasAiTextGeneration ? aiContent : undefined}
         onTitleChange={setUpdatedTitle}
-        onFormDataChange={setShouldConfirmAiTextGeneration}
         onFormStatusChange={setIsPending}
+        onFormDataChange={setShouldConfirmAiTextGeneration}
       />
     </AdminChildPage>
   );

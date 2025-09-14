@@ -66,6 +66,9 @@ export default function ImageInput({
           htmlFor={id}
           className={clsx(
             'shrink-0 select-none text-main',
+            // Undo standard label styles since
+            // content is shown as button
+            'font-normal tracking-normal',
             disabled && 'pointer-events-none cursor-not-allowed',
           )}
         >
@@ -129,7 +132,7 @@ export default function ImageInput({
                     '2d', { colorSpace: 'display-p3' },
                   );
 
-                  if ((shouldResize || isPng) && canvas && ctx) {
+                  if (shouldResize && canvas && ctx) {
                     // Process images that need resizing
                     const image = await blobToImage(file);
 

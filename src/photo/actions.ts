@@ -1,7 +1,6 @@
 'use server';
 
 import {
-  deletePhoto,
   insertPhoto,
   deletePhotoTagGlobally,
   updatePhoto,
@@ -43,6 +42,7 @@ import {
 import {
   blurImageFromUrl,
   convertFormDataToPhotoDbInsertAndLookupRecipeTitle,
+  deletePhotoAndFiles,
   extractImageDataFromBlobPath,
   propagateRecipeTitleIfNecessary,
 } from './server';
@@ -57,8 +57,8 @@ import {
   BLUR_ENABLED,
 } from '@/app/config';
 import { generateAiImageQueries } from './ai/server';
-import { createStreamableValue } from 'ai/rsc';
-import { convertUploadToPhoto } from './storage';
+import { createStreamableValue } from '@ai-sdk/rsc';
+import { convertUploadToPhoto } from './storage/server';
 import { UrlAddStatus } from '@/admin/AdminUploadsClient';
 import { convertStringToArray } from '@/utility/string';
 import { after } from 'next/server';
@@ -66,6 +66,7 @@ import {
   getColorFieldsForImageUrl,
   getColorFieldsForPhotoDbInsert,
 } from '@/photo/color/server';
+import { shouldBackfillPhotoStorage } from './update/server';
 
 // Private actions
 
@@ -78,7 +79,7 @@ export const createPhotoAction = async (formData: FormData) =>
     );
 
     const updatedUrl = await convertUploadToPhoto({
-      urlOrigin: photo.url,
+      uploadUrl: photo.url,
       shouldStripGpsData,
     });
     
@@ -174,7 +175,7 @@ const addUpload = async ({
     onStreamUpdate?.('Transferring to photo storage');
 
     const updatedUrl = await convertUploadToPhoto({
-      urlOrigin: url,
+      uploadUrl: url,
       fileBytes,
       shouldStripGpsData,
     });
@@ -277,14 +278,11 @@ export const updatePhotoAction = async (formData: FormData) =>
   runAuthenticatedAdminServerAction(async () => {
     const photo =
       await convertFormDataToPhotoDbInsertAndLookupRecipeTitle(formData);
-
+   
     let urlToDelete: string | undefined;
-    if (photo.hidden && photo.url.includes(photo.id)) {
-      // Backfill:
-      // Anonymize storage url on update if necessary by
-      // re-running image upload transfer logic
+    if (await shouldBackfillPhotoStorage(photo)) {
       const url = await convertUploadToPhoto({
-        urlOrigin: photo.url,
+        uploadUrl: photo.url,
         shouldDeleteOrigin: false,
       });
       if (url) {
@@ -356,7 +354,7 @@ export const deletePhotosAction = async (photoIds: string[]) =>
     for (const photoId of photoIds) {
       const photo = await getPhoto(photoId, true);
       if (photo) {
-        await deletePhoto(photoId).then(() => deleteFile(photo.url));
+        await deletePhotoAndFiles(photoId, photo.url);
       }
     }
     revalidateAllKeysAndPaths();
@@ -368,7 +366,7 @@ export const deletePhotoAction = async (
   shouldRedirect?: boolean,
 ) =>
   runAuthenticatedAdminServerAction(async () => {
-    await deletePhoto(photoId).then(() => deleteFile(photoUrl));
+    await deletePhotoAndFiles(photoId, photoUrl);
     revalidateAllKeysAndPaths();
     if (shouldRedirect) {
       redirect(PATH_ROOT);
@@ -493,7 +491,15 @@ export const getExifDataAction = async (
 // - strip GPS data if necessary
 // - update blur data (or destroy if blur is disabled)
 // - generate AI text data, if enabled, and auto-generated fields are empty
-export const syncPhotoAction = async (photoId: string, isBatch?: boolean) =>
+export const syncPhotoAction = async (
+  photoId: string, {
+    isBatch,
+    updateMode,
+  }: {
+    isBatch?: boolean,
+    updateMode?: boolean,
+  } = {},
+) =>
   runAuthenticatedAdminServerAction(async () => {
     const photo = await getPhoto(photoId ?? '', true);
 
@@ -507,15 +513,21 @@ export const syncPhotoAction = async (photoId: string, isBatch?: boolean) =>
         includeInitialPhotoFields: false,
         generateBlurData: BLUR_ENABLED,
         generateResizedImage: AI_CONTENT_GENERATION_ENABLED,
+        // If in update mode, only update color fields if necessary
+        updateColorFields: !(
+          updateMode &&
+          photo.colorData !== undefined &&
+          photo.colorSort !== undefined
+        ),
       });
 
       let urlToDelete: string | undefined;
       if (formDataFromExif) {
-        if (photo.url.includes(photo.id) || shouldStripGpsData) {
+        if (await shouldBackfillPhotoStorage(photo) || shouldStripGpsData) {
           // Anonymize storage url on update if necessary by
           // re-running image upload transfer logic
           const url = await convertUploadToPhoto({
-            urlOrigin: photo.url,
+            uploadUrl: photo.url,
             fileBytes,
             shouldStripGpsData,
             shouldDeleteOrigin: false,
@@ -577,7 +589,7 @@ export const syncPhotosAction = async (photosToSync: {
     for (const { photoId, onlySyncColorData } of photosToSync) {
       await (onlySyncColorData
         ? storeColorDataForPhotoAction(photoId)
-        : syncPhotoAction(photoId, true));
+        : syncPhotoAction(photoId, { isBatch: true }));
     }
     revalidateAllKeysAndPaths();
   });

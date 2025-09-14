@@ -10,7 +10,7 @@ import {
 } from 'react';
 import ChecklistRow from '@/components/ChecklistRow';
 import ChecklistGroup from '@/components/ChecklistGroup';
-import { AppConfiguration } from '@/app/config';
+import { AppConfiguration, SOCIAL_KEYS } from '@/app/config';
 import StatusIcon from '@/components/StatusIcon';
 import { labelForStorage } from '@/platforms/storage';
 import { testConnectionsAction } from '@/admin/actions';
@@ -19,7 +19,7 @@ import SecretGenerator from '@/app/SecretGenerator';
 import EnvVar from '@/components/EnvVar';
 import AdminLink from '@/admin/AdminLink';
 import ScoreCardContainer from '@/components/ScoreCardContainer';
-import { DEFAULT_CATEGORY_KEYS, getHiddenCategories } from '@/category';
+import { CATEGORY_KEYS, DEFAULT_CATEGORY_KEYS } from '@/category';
 import { AI_AUTO_GENERATED_FIELDS_ALL } from '@/photo/ai';
 import clsx from 'clsx/lite';
 import Link from 'next/link';
@@ -32,6 +32,8 @@ import {
 } from '.';
 import ColorDot from '@/photo/color/ColorDot';
 import { Oklch } from '@/photo/color/client';
+import { getOrderedKeyListStatus } from '@/utility/key';
+import { DEFAULT_SOCIAL_KEYS } from '@/social';
 
 export default function AdminAppConfigurationClient({
   // Storage
@@ -43,6 +45,7 @@ export default function AdminAppConfigurationClient({
   hasVercelBlobStorage,
   hasCloudflareR2Storage,
   hasAwsS3Storage,
+  hasMinioStorage,
   hasMultipleStorageProviders,
   currentStorage,
   // Auth
@@ -99,7 +102,6 @@ export default function AdminAppConfigurationClient({
   showExifInfo,
   showZoomControls,
   showTakenAtTimeHidden,
-  showSocial,
   showRepoLink,
   // Grid
   isGridHomepageEnabled,
@@ -117,6 +119,8 @@ export default function AdminAppConfigurationClient({
   // Settings
   isGeoPrivacyEnabled,
   arePublicDownloadsEnabled,
+  hasSocialKeys,
+  socialKeys,
   areSiteFeedsEnabled,
   isOgTextBottomAligned,
   // Internal
@@ -183,6 +187,23 @@ export default function AdminAppConfigurationClient({
       renderEnvVars([variable]),
       'translate-y-[7px]',
     );
+
+  const renderOrderedKeyList = (
+    selectedKeys: string[],
+    acceptedKeys: readonly string[],
+  ) =>
+    <div>
+      {getOrderedKeyListStatus({ selectedKeys, acceptedKeys })
+        .map(({ label, selected }) =>
+          <Fragment key={label}>
+            {renderSubStatus(
+              selected ? 'checked' : 'optional',
+              selected
+                ? label
+                : <span className="text-dim">{label}</span>,
+            )}
+          </Fragment>)}
+    </div>;
 
   const renderError = ({
     connection,
@@ -306,6 +327,18 @@ export default function AdminAppConfigurationClient({
                     externalIcon
                   >
                     create/configure bucket
+                  </AdminLink>
+                </>)}
+              {hasMinioStorage
+                ? renderSubStatus('checked', 'MinIO: connected')
+                : renderSubStatus('optional', <>
+                  {labelForStorage('minio')}:
+                  {' '}
+                  <AdminLink
+                    href="https://github.com/sambecker/exif-photo-blog#minio"
+                    externalIcon
+                  >
+                    setup MinIO server
                   </AdminLink>
                 </>)}
             </div>
@@ -555,34 +588,13 @@ export default function AdminAppConfigurationClient({
             status={hasCategoryVisibility}
             optional
           >
+            {renderOrderedKeyList(categoryVisibility, CATEGORY_KEYS)}
             <div>
-              {categoryVisibility.map((category, index) =>
-                <Fragment key={category}>
-                  {renderSubStatus(
-                    'checked',
-                    <>
-                      {index + 1}
-                      {'.'}
-                      {category}
-                    </>,
-                  )}
-                </Fragment>)}
-              {getHiddenCategories(categoryVisibility)
-                .map(category =>
-                  <Fragment key={category}>
-                    {renderSubStatus(
-                      'optional',
-                      <span className="text-dim">
-                        {'* '}
-                        {category}
-                      </span>,
-                    )}
-                  </Fragment>)}
+              Configure order and visibility of categories
+              (seen in grid sidebar and CMD-K results)
+              by storing comma-separated values
+              (default: {`"${DEFAULT_CATEGORY_KEYS.join(',')}"`}):
             </div>
-            Configure order and visibility of categories
-            (seen in grid sidebar and CMD-K results)
-            by storing comma-separated values
-            (default: {`"${DEFAULT_CATEGORY_KEYS.join(',')}"`}):
             {renderEnvVars(['NEXT_PUBLIC_CATEGORY_VISIBILITY'])}
           </ChecklistRow>
           <ChecklistRow
@@ -737,16 +749,6 @@ export default function AdminAppConfigurationClient({
             {renderEnvVars(['NEXT_PUBLIC_HIDE_TAKEN_AT_TIME'])}
           </ChecklistRow>
           <ChecklistRow
-            title="Show social"
-            status={showSocial}
-            optional
-          >
-            Set environment variable to {'"1"'} to hide
-            {' '}
-            X (formerly Twitter) button from share modal:
-            {renderEnvVars(['NEXT_PUBLIC_HIDE_SOCIAL'])}
-          </ChecklistRow>
-          <ChecklistRow
             title="Show repo link"
             status={showRepoLink}
             optional
@@ -853,6 +855,20 @@ export default function AdminAppConfigurationClient({
             {renderEnvVars(['NEXT_PUBLIC_ALLOW_PUBLIC_DOWNLOADS'])}
           </ChecklistRow>
           <ChecklistRow
+            title="Social networks"
+            status={hasSocialKeys}
+            optional
+          >
+            {renderOrderedKeyList(socialKeys, SOCIAL_KEYS)}
+            <div>
+              Configure order and visibility of social networks
+              (seen in share modal) by storing comma-separated values
+              (accepts {'"all"'} or {'"none"'},
+              defaults to {`"${DEFAULT_SOCIAL_KEYS.join(',')}"`})
+            </div>
+            {renderEnvVars(['NEXT_PUBLIC_SOCIAL_NETWORKS'])}
+          </ChecklistRow>
+          <ChecklistRow
             title="Site feeds (JSON/RSS)"
             status={areSiteFeedsEnabled}
             optional
@@ -922,8 +938,8 @@ export default function AdminAppConfigurationClient({
         ))}
       <div className="pl-11 pr-2 sm:pr-11 mt-4 md:mt-7">
         <div>
-          Changes to environment variables require a redeploy
-          or reboot of local dev server
+          Changes to environment variables require a new deployment
+          to take effect
         </div>
       </div>
     </ScoreCardContainer>

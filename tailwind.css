@@ -242,6 +242,7 @@ html {
       bg-main
       border-gray-200 dark:border-gray-700
       font-mono text-base leading-tight
+      placeholder:text-extra-dim
   }
   input[type=text], input[type=email], input[type=password], select, textarea {
     @apply
@@ -314,10 +315,9 @@ html {
   }
   button.primary, .button.primary {
     @apply
-      text-invert
+      text-white dark:text-black
       bg-gray-900 dark:bg-gray-100
       disabled:text-dim
-      font-medium
       disabled:bg-gray-100 dark:disabled:bg-gray-900
       disabled:border-gray-200 disabled:dark:border-gray-700
       border-gray-900 dark:border-gray-100
