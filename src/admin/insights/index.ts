@@ -14,7 +14,7 @@ import {
   AI_CONTENT_GENERATION_ENABLED,
   HAS_DEPRECATED_ENV_VARS,
 } from '@/app/config';
-import { PhotoDateRange } from '@/photo';
+import { PhotoDateRangePostgres } from '@/photo';
 import { getGitHubMeta } from '@/platforms/github';
 
 const BASIC_PHOTO_INSTALLATION_COUNT = 32;
@@ -30,7 +30,8 @@ const _INSIGHTS_TEMPLATE = [
   'noAi',
   'noAiRateLimiting',
   'noConfiguredDomain',
-  'noConfiguredMeta',
+  'noConfiguredMetaTitle',
+  'noConfiguredMetaDescription',
   'photoMatting',
   'gridFirst',
   'noStaticOptimization',
@@ -64,7 +65,7 @@ export interface PhotoStats {
   recipesCount: number
   filmsCount: number
   focalLengthsCount: number
-  dateRange?: PhotoDateRange
+  dateRange?: PhotoDateRangePostgres
 }
 
 export const getGitHubMetaForCurrentApp = () =>
@@ -137,9 +138,8 @@ export const getAllInsights = ({
   ...getSignificantInsights({ codeMeta, photosCountNeedSync }),
   noFork: !codeMeta?.isForkedFromBase && !codeMeta?.isBaseRepo,
   noAi: !AI_CONTENT_GENERATION_ENABLED,
-  noConfiguredMeta:
-    !IS_META_TITLE_CONFIGURED ||
-    !IS_META_DESCRIPTION_CONFIGURED,
+  noConfiguredMetaTitle: !IS_META_TITLE_CONFIGURED,
+  noConfiguredMetaDescription: !IS_META_DESCRIPTION_CONFIGURED,
   photoMatting: photosCountPortrait > 0 && !MATTE_PHOTOS,
   gridFirst: (
     photosCount >= BASIC_PHOTO_INSTALLATION_COUNT &&
