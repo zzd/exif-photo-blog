@@ -50,12 +50,14 @@ export default function PhotoGridSidebar({
   containerHeight,
   aboutTextSafelyParsedHtml,
   aboutTextHasBrParagraphBreaks,
+  className,
   ..._categories
 }: PhotoSetCategories & {
   photosCount: number
   containerHeight?: number
   aboutTextSafelyParsedHtml?: string
   aboutTextHasBrParagraphBreaks?: boolean
+  className?: string
 }) {
   const categories = useMemo(() => HIDE_TAGS_WITH_ONE_PHOTO
     ? {
@@ -125,12 +127,12 @@ export default function PhotoGridSidebar({
       key="years"
       title={appText.category.yearPlural}
       icon={<IconYear
-        size={14}
+        size={13}
         className="translate-x-[0.5px]"
       />}
       maxItems={maxItemsPerCategory}
       items={yearRows.map((row, index) =>
-        <div key={index} className="flex gap-1">
+        <div key={index} className="flex gap-[5px]">
           {row.map(({ year, count }) =>
             <PhotoYear
               key={year}
@@ -152,8 +154,8 @@ export default function PhotoGridSidebar({
       key="cameras"
       title={appText.category.cameraPlural}
       icon={<IconCamera
-        size={15}
-        className="translate-x-[0.5px]"
+        size={14}
+        className="translate-x-[1px]"
       />}
       maxItems={maxItemsPerCategory}
       items={cameras
@@ -195,7 +197,8 @@ export default function PhotoGridSidebar({
       key="albums"
       title={appText.category.albumPlural}
       icon={<IconAlbum
-        className="translate-x-[1px]"
+        size={13.5}
+        className="translate-x-[1.5px]"
       />}
       maxItems={maxItemsPerCategory}
       items={albums
@@ -219,8 +222,8 @@ export default function PhotoGridSidebar({
       key="tags"
       title={appText.category.tagPlural}
       icon={<IconTag
-        size={14}
-        className="translate-x-[1px] translate-y-[1px]"
+        size={13.5}
+        className="translate-x-[1.5px] translate-y-[1px]"
       />}
       maxItems={maxItemsPerCategory}
       items={tagsIncludingHidden
@@ -326,7 +329,7 @@ export default function PhotoGridSidebar({
     : null;
 
   return (
-    <div className="space-y-4">
+    <div className={clsx('space-y-4', className)}>
       {aboutTextSafelyParsedHtml && <HeaderList
         items={[<p
           key="about"

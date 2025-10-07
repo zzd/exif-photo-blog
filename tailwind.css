@@ -114,6 +114,10 @@ html {
   @apply
     text-light dark:text-dark
 }
+@utility text-medium-dark {
+  @apply
+    text-gray-600 dark:text-gray-300
+}
 @utility text-medium {
   @apply
     text-gray-500 dark:text-gray-400
@@ -238,7 +242,7 @@ html {
   input[type=text], input[type=email], input[type=password], select, textarea {
     @apply
       px-2.5 py-2
-      border rounded-md
+      border rounded-lg
       bg-main
       border-gray-200 dark:border-gray-700
       font-mono text-base leading-tight
