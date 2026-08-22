@@ -4,6 +4,7 @@ import {
   insertPhoto,
   deletePhotoTagGlobally,
   updatePhoto,
+  updatePhotoTitleCaption,
   renamePhotoTagGlobally,
   getPhoto,
   getPhotos,
@@ -84,6 +85,7 @@ import {
 } from '@/album/server';
 import { addPhotoAlbumIds } from '@/album/query';
 import { getStorageUrlsForPhoto } from './storage';
+import type { VisibilityValue } from './visibility';
 
 // Private actions
 
@@ -362,14 +364,16 @@ export const toggleFavoritePhotoAction = async (
     }
   });
 
-export const togglePrivatePhotoAction = async (
+export const setPhotoVisibilityAction = async (
   photoId: string,
+  visibility: VisibilityValue,
   redirectPath?: string,
 ) =>
   runAuthenticatedAdminServerAction(async () => {
     const photo = await getPhoto(photoId, true);
     if (photo) {
-      photo.hidden = !photo.hidden;
+      photo.hidden = visibility === 'private';
+      photo.excludeFromFeeds = visibility === 'exclude';
       await updatePhoto(convertPhotoToPhotoDbInsert(photo));
       revalidateAllKeysAndPaths();
     }
@@ -760,6 +764,21 @@ export const batchPhotoAction = async ({
       break;
   }
 
+  revalidateAllKeysAndPaths();
+});
+
+export const batchUpdatePhotoTitlesAction = async (
+  updates: {
+    photoId: string
+    title: string
+    caption: string
+  }[],
+) => runAuthenticatedAdminServerAction(async () => {
+  await updatePhotoTitleCaption(
+    updates.map(({ photoId }) => photoId),
+    updates.map(({ title }) => title.trim() || null),
+    updates.map(({ caption }) => caption.trim() || null),
+  );
   revalidateAllKeysAndPaths();
 });
 
