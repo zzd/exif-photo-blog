@@ -6,6 +6,7 @@ import {
   updatePhoto,
   updatePhotoTitleCaption,
   renamePhotoTagGlobally,
+  setPhotoVisibilityForIds,
   getPhoto,
   getPhotos,
   addTagsToPhotos,
@@ -13,6 +14,7 @@ import {
   deletePhotoRecipeGlobally,
   renamePhotoRecipeGlobally,
   getPhotosNeedingRecipeTitleCount,
+  getRecipeDataForTitle,
   updateColorDataForPhoto,
   getColorDataForPhotos,
   getPhotoIds,
@@ -62,6 +64,7 @@ import { streamOpenAiImageQuery } from '@/platforms/openai';
 import {
   AI_TEXT_AUTO_GENERATED_FIELDS,
   AI_CONTENT_GENERATION_ENABLED,
+  AUTO_GENERATE_LOCATIONS,
   BLUR_ENABLED,
 } from '@/app/config';
 import { generateAiImageQueries } from './ai/server';
@@ -75,7 +78,12 @@ import { after } from 'next/server';
 import {
   getColorFieldsForImageUrl,
   getColorFieldsForPhotoDbInsert,
+  getColorFromAI,
 } from '@/photo/color/server';
+import {
+  getKeyColorFromColorData,
+  getKeyColorFromPhoto,
+} from '@/photo/color/client';
 import { shouldBackfillPhotoStorage } from './update/server';
 import { getAlbumTitlesFromFormData } from '@/album/form';
 import {
@@ -86,6 +94,10 @@ import {
 import { addPhotoAlbumIds } from '@/album/query';
 import { getStorageUrlsForPhoto } from './storage';
 import type { VisibilityValue } from './visibility';
+import {
+  COMMAND_K_PHOTO_LIMIT,
+  getPhotosQueryData,
+} from '@/query/data';
 
 // Private actions
 
@@ -156,6 +168,7 @@ const addUpload = async ({
     includeInitialPhotoFields: true,
     generateBlurData: BLUR_ENABLED,
     generateResizedImage: AI_CONTENT_GENERATION_ENABLED,
+    lookupLocation: AUTO_GENERATE_LOCATIONS,
   });
 
   if (formDataFromExif) {
@@ -444,19 +457,38 @@ export const getPhotosNeedingRecipeTitleCountAction = async (
     ),
   );
 
-export const storeColorDataForPhotoAction = async (photoId: string) =>
+export const getRecipeDataForTitleAction = async (recipeTitle: string) =>
+  runAuthenticatedAdminServerAction(async () =>
+    await getRecipeDataForTitle(recipeTitle),
+  );
+
+export const getAiColorAction = async (url: string) =>
+  runAuthenticatedAdminServerAction(async () =>
+    await getColorFromAI(url),
+  );
+
+export const storeColorDataForPhotoAction = async (
+  photoId: string,
+  { force }: { force?: boolean } = {},
+) =>
   runAuthenticatedAdminServerAction(async () => {
     const photo = await getPhoto(photoId, true);
     if (photo) {
+      const oldColor = getKeyColorFromPhoto(photo);
       const colorFields = await getColorFieldsForImageUrl(
         photo.url,
-        photo.colorData,
+        force ? undefined : photo.colorData,
       );
       if (colorFields) {
         await updatePhoto(convertPhotoToPhotoDbInsert({
           ...photo,
           ...colorFields,
         }));
+        revalidatePhoto(photo.id);
+        return {
+          oldColor,
+          newColor: getKeyColorFromColorData(colorFields.colorData),
+        };
       }
       revalidatePhoto(photo.id);
     }
@@ -579,11 +611,11 @@ export const getExifDataAction = async (
 // - strip GPS data if necessary
 // - update blur data (or destroy if blur is disabled)
 // - generate AI text data, if enabled, and auto-generated fields are empty
+// - recalculate color data/sort if AI or color sort is enabled
 export const syncPhotoAction = async (
   photoId: string, {
     isBatch,
     syncMode = 'auto',
-    updateMode,
   }: {
     isBatch?: boolean,
     syncMode?: 'auto' | 'only-missing' | 'overwrite',
@@ -603,12 +635,7 @@ export const syncPhotoAction = async (
         includeInitialPhotoFields: false,
         generateBlurData: BLUR_ENABLED,
         generateResizedImage: AI_CONTENT_GENERATION_ENABLED,
-        // In update mode, only update color fields if necessary
-        updateColorFields: !(
-          updateMode &&
-          photo.colorData !== undefined &&
-          photo.colorSort !== undefined
-        ),
+        updateColorFields: AI_CONTENT_GENERATION_ENABLED,
       });
 
       const uniqueTags = await getUniqueTags();
@@ -729,12 +756,14 @@ export const batchPhotoAction = async ({
   photoOptions,
   tags = [],
   albumTitles = [],
+  visibility,
   action,
 }: {
   photoIds?: string[]
   photoOptions?: PhotoQueryOptions
   tags?: string[]
   albumTitles?: string[]
+  visibility?: VisibilityValue
   action?: 'favorite' | 'delete'
 }) => runAuthenticatedAdminServerAction(async () => {
   const photoIds = _photoIds.length > 0
@@ -749,6 +778,13 @@ export const batchPhotoAction = async ({
   if (albumTitles.length > 0) {
     const albumIds = await createAlbumsAndGetIds(albumTitles);
     await addPhotoAlbumIds(photoIds, albumIds);
+  }
+  if (visibility !== undefined) {
+    await setPhotoVisibilityForIds(
+      photoIds,
+      visibility === 'private',
+      visibility === 'exclude',
+    );
   }
   switch (action) {
     case 'favorite':
@@ -818,8 +854,9 @@ export const getPhotosCachedAction = async (
 // Public actions
 
 export const searchPhotosPublicAction = async (query: string) =>
-  getPhotos({ query, limit: 10 })
+  getPhotosQueryData({ query, limit: COMMAND_K_PHOTO_LIMIT })
+    .then(([photos, { count }]) => ({ photos, count }))
     .catch(e => {
       console.error('Could not query photos', e);
-      return [] as Photo[];
+      return { photos: [] as Photo[], count: 0 };
     });

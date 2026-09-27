@@ -40,13 +40,13 @@ export default function PhotoPrevNextActions({
   photo,
   photos = [],
   className,
-  hasAiTextGeneration,
+  hasAiContentGeneration,
   ...categories
 }: {
   photo?: Photo
   photos?: Photo[]
   className?: string
-  hasAiTextGeneration: boolean
+  hasAiContentGeneration: boolean
 } & PhotoSetCategory) {
   const { setNextPhotoAnimation, isUserSignedIn } = useAppState();
 
@@ -112,7 +112,7 @@ export default function PhotoPrevNextActions({
     : undefined;
 
   const onKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.metaKey) {
+    if (e.metaKey || e.ctrlKey) {
       switch (e.key.toUpperCase()) {
         case KEY_COMMANDS.delete[1]:
           if (isUserSignedIn) {
@@ -124,14 +124,12 @@ export default function PhotoPrevNextActions({
       switch (e.key.toUpperCase()) {
       // Public commands
         case KEY_COMMANDS.prev[0]:
-        case KEY_COMMANDS.prev[1]:
           if (pathPrevious) {
             setNextPhotoAnimation?.(ANIMATION_RIGHT);
             refPrevious.current?.click();
           }
           break;
         case KEY_COMMANDS.next[0]:
-        case KEY_COMMANDS.next[1]:
           if (pathNext) {
             setNextPhotoAnimation?.(ANIMATION_LEFT);
             refNext.current?.click();
@@ -166,7 +164,7 @@ export default function PhotoPrevNextActions({
           if (
             isUserSignedIn &&
             photo &&
-            window.confirm(syncPhotoConfirmText(photo, hasAiTextGeneration))
+            window.confirm(syncPhotoConfirmText(photo, hasAiContentGeneration))
           ) {
             syncPhoto();
           }
@@ -186,7 +184,7 @@ export default function PhotoPrevNextActions({
     downloadFileName,
     syncPhoto,
     deletePhoto,
-    hasAiTextGeneration,
+    hasAiContentGeneration,
   ]);
   useKeydownHandler({ onKeyDown });
 
@@ -202,10 +200,13 @@ export default function PhotoPrevNextActions({
         'items-center sm:items-start',
         '*:select-none',
       )}>
-        <Tooltip {...SHOW_KEYBOARD_SHORTCUT_TOOLTIPS && {
-          content: appText.nav.prev,
-          keyCommand: KEY_COMMANDS.prev[0],
-        }}>
+        <Tooltip
+          triggerIsFocusable
+          {...SHOW_KEYBOARD_SHORTCUT_TOOLTIPS && {
+            content: appText.nav.prev,
+            keyCommand: KEY_COMMANDS.prev[0],
+          }}
+        >
           <PhotoLink
             {...categories}
             ref={refPrevious}
@@ -224,10 +225,13 @@ export default function PhotoPrevNextActions({
         <span className="text-extra-extra-dim">
           /
         </span>
-        <Tooltip {...SHOW_KEYBOARD_SHORTCUT_TOOLTIPS && {
-          content: appText.nav.next,
-          keyCommand: KEY_COMMANDS.next[0],
-        }}>
+        <Tooltip
+          triggerIsFocusable
+          {...SHOW_KEYBOARD_SHORTCUT_TOOLTIPS && {
+            content: appText.nav.next,
+            keyCommand: KEY_COMMANDS.next[0],
+          }}
+        >
           <PhotoLink
             {...categories}
             ref={refNext}

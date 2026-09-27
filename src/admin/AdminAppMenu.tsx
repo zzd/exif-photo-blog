@@ -23,7 +23,6 @@ import IconRecipe from '@/components/icons/IconRecipe';
 import IconTag from '@/components/icons/IconTag';
 import IconFolder from '@/components/icons/IconFolder';
 import IconSignOut from '@/components/icons/IconSignOut';
-import { IoMdCheckboxOutline } from 'react-icons/io';
 import IconBroom from '@/components/icons/IconBroom';
 import InsightsIndicatorDot from './insights/InsightsIndicatorDot';
 import MoreMenuItem from '@/components/more/MoreMenuItem';
@@ -36,11 +35,11 @@ import { useSelectPhotosState } from './select/SelectPhotosState';
 import { useEditTitlesState } from './edit-titles/EditTitlesState';
 import IconAlbum from '@/components/icons/IconAlbum';
 import IconEdit from '@/components/icons/IconEdit';
-import { SHOW_ABOUT_PAGE } from '@/app/config';
 import {
   HEIGHT_CLASS,
   SWITCHER_ITEM_WIDTH,
 } from '@/components/switcher/SwitcherItem';
+import { TbSquareRoundedCheck, TbSquareRoundedX } from 'react-icons/tb';
 
 export default function AdminAppMenu({
   isOpen,
@@ -177,13 +176,13 @@ export default function AdminAppMenu({
           ? appText.admin.selectPhotosExit
           : appText.admin.selectPhotos,
         icon: isSelectingPhotos
-          ? <FiXSquare
-            size={15}
-            className="translate-x-[-0.75px] translate-y-[0.5px]"
+          ? <TbSquareRoundedX
+            size={17}
+            className="translate-x-[-0.5px] translate-y-[1px]"
           />
-          : <IoMdCheckboxOutline
-            size={16}
-            className="translate-x-[-0.5px] translate-y-[0.5px]"
+          : <TbSquareRoundedCheck
+            size={17}
+            className="translate-x-[-0.5px] translate-y-[1px]"
           />,
         action: isSelectingPhotos
           ? stopSelectingPhotos
@@ -199,7 +198,7 @@ export default function AdminAppMenu({
             className="translate-x-[-0.75px] translate-y-[0.5px]"
           />
           : <IconEdit
-            size={15}
+            size={17}
             className="translate-x-[-0.5px] translate-y-[0.5px]"
           />,
         action: isEditingTitles
@@ -264,9 +263,7 @@ export default function AdminAppMenu({
       </div>}
       align="start"
       sideOffset={10}
-      alignOffset={SHOW_ABOUT_PAGE
-        ? -(SWITCHER_ITEM_WIDTH * 3)
-        : -(SWITCHER_ITEM_WIDTH * 2)}
+      alignOffset={-(SWITCHER_ITEM_WIDTH * 3)}
       onOpen={refreshAdminData}
       sections={sections}
       ariaLabel="Admin Menu"

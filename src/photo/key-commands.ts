@@ -1,9 +1,10 @@
 export const KEY_COMMANDS = {
+  home: 'H',
   full: 'F',
   grid: 'G',
-  about: 'A',
-  prev: ['J', 'ARROWLEFT'],
-  next: ['L', 'ARROWRIGHT'],
+  library: 'L',
+  prev: ['ARROWLEFT'],
+  next: ['ARROWRIGHT'],
   edit: 'E',
   favorite: 'P',
   unfavorite: 'X',

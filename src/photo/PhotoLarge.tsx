@@ -32,6 +32,7 @@ import {
   MATTE_COLOR_DARK,
   ALWAYS_SHOW_EXPOSURE_COMP,
   UPPERCASE_TITLES,
+  GEO_PRIVACY_ENABLED,
 } from '@/app/config';
 import AdminPhotoMenu from '@/admin/AdminPhotoMenu';
 import { RevalidatePhoto } from './InfinitePhotoScroll';
@@ -56,6 +57,7 @@ import AdminPhotoStorageCheck from '@/admin/storage/AdminPhotoStorageCheck';
 import { useEditTitlesState } from '@/admin/edit-titles/EditTitlesState';
 import { DATA_KEY_PHOTO_LARGE } from '@/admin/edit-titles/EditTitlesProvider';
 import FieldsetWithStatus from '@/components/FieldsetWithStatus';
+import PlaceEntity from '@/place/PlaceEntity';
 
 export default function PhotoLarge({
   photo,
@@ -65,6 +67,7 @@ export default function PhotoLarge({
   priority,
   prefetch = SHOULD_PREFETCH_ALL_LINKS,
   prefetchRelatedLinks = SHOULD_PREFETCH_ALL_LINKS,
+  query,
   recent,
   year,
   revalidatePhoto,
@@ -77,6 +80,7 @@ export default function PhotoLarge({
   showZoomControls: _showZoomControls = true,
   shouldZoomOnFKeydown = true,
   shouldShare = true,
+  shouldShareQuery,
   shouldShareRecents,
   shouldShareYear,
   shouldShareCamera,
@@ -98,6 +102,7 @@ export default function PhotoLarge({
   priority?: boolean
   prefetch?: boolean
   prefetchRelatedLinks?: boolean
+  query?: string
   recent?: boolean
   year?: string
   revalidatePhoto?: RevalidatePhoto
@@ -110,6 +115,7 @@ export default function PhotoLarge({
   showZoomControls?: boolean
   shouldZoomOnFKeydown?: boolean
   shouldShare?: boolean
+  shouldShareQuery?: boolean
   shouldShareRecents?: boolean
   shouldShareYear?: boolean
   shouldShareCamera?: boolean
@@ -189,6 +195,9 @@ export default function PhotoLarge({
   const showTagsContent = tags.length > 0;
   const showRecipeContent = showRecipe && shouldShowRecipeDataForPhoto(photo);
   const showFilmContent = showFilm && shouldShowFilmDataForPhoto(photo);
+  const showPlaceContent =
+    Boolean(photo.location) &&
+    !GEO_PRIVACY_ENABLED;
 
   useVisibility({ ref, onVisible });
 
@@ -207,6 +216,7 @@ export default function PhotoLarge({
     showTagsContent ||
     showRecipeContent ||
     showFilmContent ||
+    showPlaceContent ||
     showExifContent;
 
   const hasNonDateContent =
@@ -254,7 +264,7 @@ export default function PhotoLarge({
           aspectRatio={photo.aspectRatio}
           blurDataURL={photo.blurData}
           blurCompatibilityMode={doesPhotoNeedBlurCompatibility(photo)}
-          priority={priority}
+          loading={priority ? 'eager' : undefined}
         />
       </ZoomControls>
       <div className={clsx(
@@ -380,6 +390,7 @@ export default function PhotoLarge({
                     showCameraContent ||
                     showLensContent ||
                     showRecipeContent ||
+                    showPlaceContent ||
                     showTagsContent
                   ) &&
                     <div>
@@ -478,6 +489,14 @@ export default function PhotoLarge({
                           isShowingRecipeOverlay,
                         }}
                       />}
+                    {showPlaceContent && photo.location &&
+                      <div>
+                        <PlaceEntity
+                          place={photo.location}
+                          contrast="low"
+                          className="-translate-x-0.5"
+                        />
+                      </div>}
                   </>}
                 <div className={clsx(
                   'flex gap-x-3 gap-y-baseline',
@@ -503,6 +522,7 @@ export default function PhotoLarge({
                     {showZoomControls &&
                       <LoaderButton
                         tooltip={appText.tooltip.zoom}
+                        aria-label={appText.tooltip.zoom}
                         icon={<LuExpand size={15} />}
                         onClick={() => refZoomControls.current?.open()}
                         styleAs="link"
@@ -513,6 +533,9 @@ export default function PhotoLarge({
                       <ShareButton
                         tooltip={appText.tooltip.sharePhoto}
                         photo={photo}
+                        query={shouldShareQuery
+                          ? query
+                          : undefined}
                         recent={shouldShareRecents
                           ? recent
                           : undefined}
